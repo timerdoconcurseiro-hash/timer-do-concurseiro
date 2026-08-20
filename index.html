@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timer do Concurseiro</title>
+    
+    <!-- Bibliotecas para gerar PDF direto no navegador -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        /* =========================================
+           1. ESTILOS GLOBAIS E TRANSIÇÕES
+           ========================================= */
+        body, html {
+            margin: 0; padding: 0;
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            background-color: #0F172A; 
+            color: #F8FAFC;
+            height: 100vh;
+            display: flex;
+            transition: background-color 0.8s ease;
+        }
+
+        body.modo-pausa { background-color: #064E3B; }
+
+        /* =========================================
+           2. MENU LATERAL
+           ========================================= */
+        .sidebar {
+            width: 160px; background-color: #1E293B;
+            display: flex; flex-direction: column;
+            align-items: center; padding-top: 30px;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.3); z-index: 10;
+        }
+
+        .sidebar-item {
+            width: 90%; padding: 15px 0; margin-bottom: 10px;
+            text-align: center; font-size: 14px;
+            color: #94A3B8; cursor: pointer;
+            border-radius: 12px; transition: all 0.3s ease;
+        }
+
+        .sidebar-item:hover { color: #00E5FF; background-color: rgba(0, 229, 255, 0.1); }
+        .sidebar-item.active { background-color: #00E5FF; color: #0F172A; font-weight: bold; }
+
+        /* =========================================
+           3. ÁREA PRINCIPAL & BARRA DE META
+           ========================================= */
+        .main-content {
+            flex-grow: 1; display: flex; flex-direction: column; position: relative;
+        }
+
+        .progress-container {
+            width: 100%; height: 6px; background-color: #334155; position: absolute; top: 0;
+        }
+        .progress-bar {
+            height: 100%; background-color: #10B981; width: 0%; transition: width 1s;
+        }
+
+        .top-nav {
+            height: 70px; display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            border-bottom: 1px solid #334155; margin-top: 6px;
+        }
+
+        .logo { 
+            font-size: 22px; font-weight: 800; letter-spacing: 1px; color: #00E5FF; 
+            display: flex; align-items: center;
+        }
+        .beta-badge {
+            background-color: #F59E0B; color: #0F172A; font-size: 10px;
+            font-weight: 900; padding: 2px 6px; border-radius: 4px;
+            margin-left: 10px; letter-spacing: normal;
+        }
+        
+        .header-actions { display: flex; gap: 10px; margin-top: 5px; align-items: center; }
+        
+        .action-link { 
+            font-size: 12px; color: #94A3B8; cursor: pointer; 
+            padding: 4px 10px; border-radius: 15px; transition: 0.2s;
+            background: transparent; border: 1px solid transparent;
+        }
+        .action-link:hover { background-color: #334155; color: #fff; }
+
+        select.action-link {
+            background-color: #1E293B; border: 1px solid #334155; color: #94A3B8;
+            outline: none; padding: 2px 8px; cursor: pointer;
+        }
+
+        /* =========================================
+           4. CONTAINERS E RELÓGIO
+           ========================================= */
+        .view-container {
+            flex-grow: 1; display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+        }
+        .hidden { display: none !important; }
+
+        .status-text {
+            color: #F1F5F9; font-size: 20px; letter-spacing: 2px;
+            margin-bottom: 5px; text-transform: uppercase;
+        }
+
+        .shortcuts { 
+            margin-bottom: 20px; display: flex; gap: 10px; 
+            flex-wrap: wrap; justify-content: center; max-width: 500px;
+        }
+        .btn-shortcut {
+            background: transparent; border: 1px solid #00E5FF; color: #00E5FF;
+            padding: 5px 12px; border-radius: 20px; font-size: 12px; cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-shortcut:hover { background: #00E5FF; color: #0F172A; }
+        .btn-shortcut.pausa { border-color: #10B981; color: #10B981; }
+        .btn-shortcut.pausa:hover { background: #10B981; color: white; }
+
+        .time-display {
+            font-size: 130px; color: #00E5FF; font-family: 'Courier New', monospace; 
+            font-weight: bold; text-shadow: 0 0 20px rgba(0, 229, 255, 0.4);
+            line-height: 1; margin-bottom: 20px;
+        }
+
+        /* =========================================
+           5. INPUT E BOTÕES
+           ========================================= */
+        .input-materia {
+            padding: 12px 20px; border-radius: 8px; border: 1px solid #334155;
+            background-color: #1E293B; color: white; font-size: 16px;
+            width: 300px; margin-bottom: 30px; text-align: center;
+            outline: none; transition: border-color 0.2s;
+        }
+        .input-materia:focus { border-color: #00E5FF; }
+
+        .buttons { display: flex; gap: 15px; }
+        .btn {
+            padding: 15px 30px; border: none; border-radius: 30px;
+            font-size: 15px; font-weight: bold; cursor: pointer; text-transform: uppercase; 
+            transition: transform 0.2s, opacity 0.2s;
+        }
+        .btn:hover { transform: translateY(-2px); opacity: 0.9; }
+
+        .btn-edit { background-color: #334155; color: white; }
+        .btn-save { background-color: #F43F5E; color: white; }
+        .btn-start { background-color: #10B981; color: white; width: 130px; }
+        .btn-pause { background-color: #F59E0B; color: white; width: 130px; }
+        
+        .history-actions { display: flex; gap: 10px; margin-top: 15px; }
+        .btn-export { background-color: #00E5FF; color: #0F172A; }
+        .btn-pdf { background-color: #8B5CF6; color: white; } /* Roxo elegante para o PDF */
+        .btn-clear { background-color: transparent; border: 1px solid #F43F5E; color: #F43F5E; }
+        .btn-clear:hover { background-color: #F43F5E; color: white; }
+
+        /* =========================================
+           6. HISTÓRICO
+           ========================================= */
+        .dashboard-stats {
+            background: #1E293B; padding: 15px 30px; border-radius: 12px;
+            margin-bottom: 20px; text-align: center; border: 1px solid #334155;
+        }
+        .dashboard-stats h2 { margin: 0 0 5px 0; color: #10B981; font-size: 28px; }
+        .dashboard-stats p { margin: 0; color: #94A3B8; font-size: 14px; }
+
+        .history-list {
+            width: 90%; max-width: 700px; max-height: 350px; overflow-y: auto; 
+            background: #1E293B; border-radius: 12px; padding: 20px;
+        }
+        .history-item {
+            display: flex; justify-content: space-between; padding: 12px 10px; 
+            border-bottom: 1px solid #334155; color: #94A3B8;
+        }
+        .history-item span { color: #F8FAFC; font-weight: bold; }
+        .history-item .tag { color: #00E5FF; font-style: italic; }
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <div class="sidebar-item active" id="tab-temporizador" onclick="mudarAba('temporizador')">Temporizador</div>
+        <div class="sidebar-item" id="tab-cronometro" onclick="mudarAba('cronometro')">Cronômetro</div>
+        <div class="sidebar-item" id="tab-historico" onclick="mudarAba('historico')">Histórico</div>
+    </div>
+
+    <div class="main-content">
+        <!-- BARRA DE PROGRESSO E HEADER COM SELEÇÃO DE SOM -->
+        <div class="progress-container"><div class="progress-bar" id="meta-bar"></div></div>
+        <div class="top-nav">
+            <div class="logo">
+                Timer do Concurseiro. 
+                <span class="beta-badge">VERSÃO BETA</span>
+            </div>
+            <div class="header-actions">
+                <div class="action-link" id="texto-meta" onclick="editarMeta()" title="Alterar meta">
+                    Meta: 4h ✏️
+                </div>
+                <div class="action-link" onclick="zerarProgressoHoje()" title="Zerar horas de hoje">
+                    Zerar Hoje 🔄
+                </div>
+                <select id="som-alarme" class="action-link" onchange="salvarPreferenciaSom()">
+                    <option value="suave">🔔 Som: Suave</option>
+                    <option value="despertador">⏰ Som: Despertador</option>
+                    <option value="alerta">🚨 Som: Alerta</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- TELA 1: TEMPORIZADOR -->
+        <div id="view-temporizador" class="view-container">
+            <div class="status-text" id="status-temp">Foco Total</div>
+            
+            <div class="shortcuts">
+                <button class="btn-shortcut" onclick="aplicarAtalho(30, 'foco')">30 min Foco</button>
+                <button class="btn-shortcut" onclick="aplicarAtalho(50, 'foco')">50 min Foco</button>
+                <button class="btn-shortcut" onclick="aplicarAtalho(60, 'foco')">60 min Foco</button>
+                <button class="btn-shortcut pausa" onclick="aplicarAtalho(5, 'pausa')">5 min Pausa</button>
+                <button class="btn-shortcut pausa" onclick="aplicarAtalho(10, 'pausa')">10 min Pausa</button>
+                <button class="btn-shortcut pausa" onclick="aplicarAtalho(15, 'pausa')">15 min Pausa</button>
+            </div>
+
+            <div class="time-display" id="display-temporizador">30:00</div>
+            <input type="text" id="materia-temp" class="input-materia" placeholder="Qual matéria você vai estudar?">
+
+            <div class="buttons">
+                <button class="btn btn-edit" onclick="ajustarTemporizador()">Ajustar</button>
+                <button class="btn btn-start" id="btn-play-temp" onclick="iniciarPausarTemporizador()">Iniciar</button>
+                <button class="btn btn-save" onclick="salvarTemporizador()">Salvar</button>
+            </div>
+        </div>
+
+        <!-- TELA 2: CRONÔMETRO -->
+        <div id="view-cronometro" class="view-container hidden">
+            <div class="status-text">Estudo Livre</div>
+            <div class="time-display" id="display-cronometro">00:00</div>
+            <input type="text" id="materia-crono" class="input-materia" placeholder="Qual matéria você vai estudar?">
+
+            <div class="buttons">
+                <button class="btn btn-start" id="btn-play-crono" onclick="iniciarPausarCronometro()">Iniciar</button>
+                <button class="btn btn-save" onclick="salvarCronometro()">Salvar</button>
+            </div>
+        </div>
+
+        <!-- TELA 3: HISTÓRICO -->
+        <div id="view-historico" class="view-container hidden">
+            <div class="dashboard-stats">
+                <h2 id="total-liquido">00:00:00</h2>
+                <p>Total de Horas Líquidas Hoje</p>
+            </div>
+            <div class="history-list" id="lista-historico"></div>
+            
+            <div class="history-actions">
+                <button class="btn btn-export" onclick="exportarCSV()">📥 Excel</button>
+                <button class="btn btn-pdf" onclick="exportarPDF()">📄 PDF</button>
+                <button class="btn btn-clear" onclick="limparHistorico()">🗑️ Limpar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- =========================================
+         LÓGICA JAVASCRIPT
+         ========================================= -->
+    <script>
+        let metaDiariaSegundos = localStorage.getItem('metaUsuario') ? parseInt(localStorage.getItem('metaUsuario')) : 4 * 3600;
+        
+        if (localStorage.getItem('somAlarme')) {
+            document.getElementById('som-alarme').value = localStorage.getItem('somAlarme');
+        }
+
+        let tempoInicialTemp = 30 * 60; 
+        let tempoRestante = tempoInicialTemp;
+        let rodandoTemp = false;
+        let horaFimAlvo = 0; 
+        let modoAtual = 'foco'; 
+
+        let tempoDecorrido = 0; 
+        let rodandoCrono = false;
+        let horaInicioCrono = 0; 
+
+        let audioCtx = null;
+
+        const workerBlob = new Blob([`
+            let timerID = null;
+            self.onmessage = function(e) {
+                if (e.data === 'start') {
+                    if (timerID) clearInterval(timerID);
+                    timerID = setInterval(() => self.postMessage('tick'), 1000);
+                } else if (e.data === 'stop') {
+                    clearInterval(timerID);
+                    timerID = null;
+                }
+            }
+        `], { type: 'application/javascript' });
+        const timerWorker = new Worker(URL.createObjectURL(workerBlob));
+
+        timerWorker.onmessage = function(e) {
+            if (e.data === 'tick') {
+                if (rodandoTemp) {
+                    tempoRestante = Math.ceil((horaFimAlvo - Date.now()) / 1000);
+                    if (tempoRestante > 0) {
+                        atualizarDisplayTemporizador();
+                    } else {
+                        rodandoTemp = false; tempoRestante = 0;
+                        atualizarDisplayTemporizador();
+                        document.getElementById('btn-play-temp').innerText = "Iniciar"; 
+                        document.getElementById('btn-play-temp').classList.replace('btn-pause', 'btn-start');
+                        document.title = "✅ TEMPO ESGOTADO!";
+                        
+                        tocarAlarme();
+                        salvarSessao('Temporizador', tempoInicialTemp, document.getElementById('materia-temp').value);
+                        
+                        setTimeout(() => {
+                            aplicarAtalho(30, 'foco');
+                        }, 2000);
+                    }
+                }
+                
+                if (rodandoCrono) {
+                    tempoDecorrido = Math.floor((Date.now() - horaInicioCrono) / 1000);
+                    atualizarDisplayCronometro();
+                }
+            }
+        };
+
+        window.onload = function() { atualizarPainelEProgresso(); };
+
+        window.addEventListener('beforeunload', function (e) {
+            if (rodandoTemp || rodandoCrono) { e.preventDefault(); e.returnValue = ''; }
+        });
+
+        // --- SISTEMA DE ÁUDIO SUAVE E PERSONALIZADO ---
+        function inicializarAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function salvarPreferenciaSom() {
+            localStorage.setItem('somAlarme', document.getElementById('som-alarme').value);
+            inicializarAudio();
+            tocarAlarme(true); 
+        }
+
+        function tocarAlarme(amostra = false) {
+            if (!audioCtx) inicializarAudio();
+            const tipoSom = document.getElementById('som-alarme').value;
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            let duracao = amostra ? 2 : 5; 
+            let tempoAtual = audioCtx.currentTime;
+
+            if (tipoSom === 'suave') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(440, tempoAtual); 
+                gainNode.gain.setValueAtTime(0, tempoAtual);
+                for(let i = 0; i < duracao; i++) {
+                    gainNode.gain.linearRampToValueAtTime(0.6, tempoAtual + i + 0.5);
+                    gainNode.gain.linearRampToValueAtTime(0, tempoAtual + i + 1);
+                }
+                osc.start(tempoAtual); osc.stop(tempoAtual + duracao);
+            } 
+            else if (tipoSom === 'despertador') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(600, tempoAtual);
+                gainNode.gain.setValueAtTime(0, tempoAtual);
+                for(let i = 0; i < duracao * 2; i += 0.5) {
+                    gainNode.gain.setValueAtTime(0.3, tempoAtual + i);
+                    gainNode.gain.setValueAtTime(0, tempoAtual + i + 0.2);
+                }
+                osc.start(tempoAtual); osc.stop(tempoAtual + duracao);
+            } 
+            else if (tipoSom === 'alerta') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(500, tempoAtual);
+                gainNode.gain.setValueAtTime(0.1, tempoAtual);
+                gainNode.gain.linearRampToValueAtTime(0.5, tempoAtual + 0.5);
+                gainNode.gain.setValueAtTime(0.5, tempoAtual + duracao - 0.5);
+                gainNode.gain.linearRampToValueAtTime(0, tempoAtual + duracao);
+                osc.start(tempoAtual); osc.stop(tempoAtual + duracao);
+            }
+        }
+
+        function obterDataHoraLocal() {
+            let agora = new Date();
+            let dia = String(agora.getDate()).padStart(2, '0');
+            let mes = String(agora.getMonth() + 1).padStart(2, '0');
+            let ano = agora.getFullYear();
+            let horas = String(agora.getHours()).padStart(2, '0');
+            let min = String(agora.getMinutes()).padStart(2, '0');
+            return {
+                dataApenas: `${dia}/${mes}/${ano}`,
+                dataCompleta: `${dia}/${mes}/${ano} ${horas}:${min}`
+            };
+        }
+
+        function editarMeta() {
+            let metaAtualHoras = Math.floor(metaDiariaSegundos / 3600);
+            let input = prompt("Qual é a sua meta diária de estudos (em horas)?", metaAtualHoras);
+            if (input !== null && !isNaN(input) && input > 0) {
+                metaDiariaSegundos = parseInt(input) * 3600; 
+                localStorage.setItem('metaUsuario', metaDiariaSegundos); 
+                atualizarPainelEProgresso();
+            }
+        }
+
+        function zerarProgressoHoje() {
+            if(confirm("Deseja zerar o progresso de HOJE?")) {
+                let historico = JSON.parse(localStorage.getItem('historicoEstudos')) || [];
+                let dataHoje = obterDataHoraLocal().dataApenas;
+                let novoHistorico = historico.filter(sessao => sessao.dataData !== dataHoje);
+                localStorage.setItem('historicoEstudos', JSON.stringify(novoHistorico));
+                atualizarPainelEProgresso();
+                if(!document.getElementById('view-historico').classList.contains('hidden')) carregarHistorico();
+            }
+        }
+
+        function limparHistorico() {
+            if(confirm("🚨 ATENÇÃO: Apagar TODO o histórico?")) {
+                localStorage.removeItem('historicoEstudos');
+                carregarHistorico(); atualizarPainelEProgresso();
+            }
+        }
+
+        function formatarTempo(segundosTotais) {
+            const h = Math.floor(segundosTotais / 3600);
+            const m = Math.floor((segundosTotais % 3600) / 60);
+            const s = segundosTotais % 60;
+            const mF = m < 10 ? '0' + m : m;
+            const sF = s < 10 ? '0' + s : s;
+            if (h > 0) return `${h < 10 ? '0'+h : h}:${mF}:${sF}`;
+            return `${mF}:${sF}`;
+        }
+
+        function mudarAba(aba) {
+            document.querySelectorAll('.view-container').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
+            document.getElementById('view-' + aba).classList.remove('hidden');
+            document.getElementById('tab-' + aba).classList.add('active');
+            document.title = "Timer do Concurseiro";
+            if(aba === 'historico') { carregarHistorico(); atualizarPainelEProgresso(); }
+        }
+
+        function aplicarAtalho(minutos, tipo) {
+            if (rodandoTemp) return; 
+            tempoInicialTemp = minutos * 60;
+            tempoRestante = tempoInicialTemp;
+            modoAtual = tipo;
+            
+            let statusText = document.getElementById('status-temp');
+            if(tipo === 'pausa') {
+                document.body.classList.add('modo-pausa');
+                statusText.innerText = "Hora de Relaxar";
+                document.getElementById('materia-temp').value = "Pausa / Descanso";
+            } else {
+                document.body.classList.remove('modo-pausa');
+                statusText.innerText = "Foco Total";
+                document.getElementById('materia-temp').value = "";
+            }
+            atualizarDisplayTemporizador();
+        }
+
+        function atualizarDisplayTemporizador() {
+            let tempoF = formatarTempo(tempoRestante);
+            document.getElementById('display-temporizador').innerText = tempoF;
+            if (rodandoTemp) document.title = "⏳ " + tempoF + (modoAtual === 'foco' ? " - Foco" : " - Pausa");
+        }
+
+        function ajustarTemporizador() {
+            if (rodandoTemp) return; 
+            let input = prompt("Quantos minutos?", "30");
+            if (input !== null && !isNaN(input) && input > 0) aplicarAtalho(parseInt(input), 'foco'); 
+        }
+
+        function iniciarPausarTemporizador() {
+            inicializarAudio(); 
+            let btn = document.getElementById('btn-play-temp');
+            
+            if (rodandoTemp) {
+                rodandoTemp = false;
+                timerWorker.postMessage('stop');
+                btn.innerText = "Retomar"; btn.classList.replace('btn-pause', 'btn-start');
+                document.title = "⏸️ Pausado";
+            } else {
+                rodandoTemp = true;
+                btn.innerText = "Pausar"; btn.classList.replace('btn-start', 'btn-pause');
+                horaFimAlvo = Date.now() + (tempoRestante * 1000);
+                timerWorker.postMessage('start'); 
+            }
+        }
+
+        function salvarTemporizador() {
+            let tempoEstudado = tempoInicialTemp - tempoRestante; 
+            if (tempoEstudado > 0) {
+                salvarSessao('Temporizador', tempoEstudado, document.getElementById('materia-temp').value);
+            }
+            rodandoTemp = false; timerWorker.postMessage('stop');
+            tempoRestante = tempoInicialTemp;
+            atualizarDisplayTemporizador();
+            let btn = document.getElementById('btn-play-temp');
+            btn.innerText = "Iniciar"; btn.classList.replace('btn-pause', 'btn-start');
+            document.title = "Timer do Concurseiro";
+            document.getElementById('materia-temp').value = ""; 
+        }
+
+        function atualizarDisplayCronometro() {
+            let tempoF = formatarTempo(tempoDecorrido);
+            document.getElementById('display-cronometro').innerText = tempoF;
+            if (rodandoCrono) document.title = "⏱️ " + tempoF + " - Livre";
+        }
+
+        function iniciarPausarCronometro() {
+            let btn = document.getElementById('btn-play-crono');
+            if (rodandoCrono) {
+                rodandoCrono = false; timerWorker.postMessage('stop');
+                btn.innerText = "Retomar"; btn.classList.replace('btn-pause', 'btn-start');
+                document.title = "⏸️ Pausado";
+            } else {
+                rodandoCrono = true;
+                btn.innerText = "Pausar"; btn.classList.replace('btn-start', 'btn-pause');
+                horaInicioCrono = Date.now() - (tempoDecorrido * 1000);
+                if(!rodandoTemp) timerWorker.postMessage('start');
+            }
+        }
+
+        function salvarCronometro() {
+            if (tempoDecorrido > 0) {
+                salvarSessao('Cronômetro', tempoDecorrido, document.getElementById('materia-crono').value);
+            }
+            rodandoCrono = false; 
+            if(!rodandoTemp) timerWorker.postMessage('stop'); 
+            tempoDecorrido = 0;
+            atualizarDisplayCronometro();
+            let btn = document.getElementById('btn-play-crono');
+            btn.innerText = "Iniciar"; btn.classList.replace('btn-pause', 'btn-start');
+            document.title = "Timer do Concurseiro";
+            document.getElementById('materia-crono').value = ""; 
+        }
+
+        function salvarSessao(tipo, segundosEstudados, materiaDigitada) {
+            let historico = JSON.parse(localStorage.getItem('historicoEstudos')) || [];
+            let relogioPreciso = obterDataHoraLocal(); 
+            let materiaFinal = materiaDigitada ? materiaDigitada : "Sem matéria";
+            
+            historico.push({
+                dataData: relogioPreciso.dataApenas, 
+                dataHora: relogioPreciso.dataCompleta, 
+                tipo: tipo,
+                materia: materiaFinal,
+                segundos: segundosEstudados, 
+                duracaoTexto: formatarTempo(segundosEstudados)
+            });
+            
+            localStorage.setItem('historicoEstudos', JSON.stringify(historico));
+            atualizarPainelEProgresso();
+        }
+
+        function atualizarPainelEProgresso() {
+            let historico = JSON.parse(localStorage.getItem('historicoEstudos')) || [];
+            let dataHoje = obterDataHoraLocal().dataApenas;
+            let segundosHoje = 0;
+
+            historico.forEach(sessao => {
+                if (sessao.dataData === dataHoje && !sessao.materia.toLowerCase().includes("pausa")) {
+                    segundosHoje += sessao.segundos;
+                }
+            });
+
+            let totalH = Math.floor(segundosHoje / 3600);
+            let totalM = Math.floor((segundosHoje % 3600) / 60);
+            document.getElementById('total-liquido').innerText = `${totalH}h ${totalM}m`;
+
+            let metaHorasNaTela = Math.floor(metaDiariaSegundos / 3600);
+            document.getElementById('texto-meta').innerHTML = `Meta: ${metaHorasNaTela}h ✏️`;
+
+            let porcentagem = (segundosHoje / metaDiariaSegundos) * 100;
+            if (porcentagem > 100) porcentagem = 100; 
+            document.getElementById('meta-bar').style.width = porcentagem + "%";
+        }
+
+        function carregarHistorico() {
+            let historico = JSON.parse(localStorage.getItem('historicoEstudos')) || [];
+            let listaHtml = document.getElementById('lista-historico');
+            listaHtml.innerHTML = '';
+            
+            if (historico.length === 0) {
+                listaHtml.innerHTML = '<p style="text-align:center;">Nenhum estudo registrado ainda.</p>';
+                return;
+            }
+            
+            historico.slice().reverse().forEach(sessao => {
+                let div = document.createElement('div');
+                div.className = 'history-item';
+                div.innerHTML = `
+                    <div><span>${sessao.dataHora.split(' ')[1]}</span> - ${sessao.dataData}</div>
+                    <div class="tag">${sessao.materia}</div>
+                    <div>⏱️ <span>${sessao.duracaoTexto}</span></div>
+                `;
+                listaHtml.appendChild(div);
+            });
+        }
+
+        // EXPORTAÇÃO EXCEL (CSV)
+        function exportarCSV() {
+            let historico = JSON.parse(localStorage.getItem('historicoEstudos')) || [];
+            if (historico.length === 0) { alert("Não há dados para exportar."); return; }
+
+            let csvContent = "Data e Hora,Tipo,Materia,Tempo(HH:MM:SS),Segundos Totais\n";
+            historico.forEach(row => {
+                let matSegura = row.materia.replace(/,/g, ''); 
+                csvContent += `${row.dataHora},${row.tipo},${matSegura},${row.duracaoTexto},${row.segundos}\n`;
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "meu_historico_concursos.csv";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // NOVA FUNÇÃO: EXPORTAÇÃO PARA PDF
+        function exportarPDF() {
+            let historico = JSON.parse(localStorage.getItem('historicoEstudos')) || [];
+            if (historico.length === 0) { alert("Não há dados para exportar."); return; }
+
+            // Verifica se a biblioteca jspdf carregou corretamente
+            if (!window.jspdf) {
+                alert("Erro ao carregar o gerador de PDF. Verifique sua conexão com a internet.");
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            // Título e Cabeçalho do PDF
+            doc.setFontSize(18);
+            doc.setTextColor(15, 23, 42); // Azul escuro
+            doc.text("Relatório de Horas Líquidas", 14, 20);
+            
+            doc.setFontSize(11);
+            doc.setTextColor(100, 100, 100);
+            doc.text("Timer do Concurseiro - Histórico Pessoal", 14, 28);
+
+            // Preparando as linhas e colunas para a tabela
+            const colunas = ["Data e Hora", "Tipo de Estudo", "Matéria / Assunto", "Tempo Estudado"];
+            const linhas = historico.map(row => [
+                row.dataHora,
+                row.tipo,
+                row.materia,
+                row.duracaoTexto
+            ]);
+
+            // Gerando a tabela zebrada
+            doc.autoTable({
+                startY: 35,
+                head: [colunas],
+                body: linhas,
+                theme: 'striped',
+                headStyles: { fillColor: [15, 23, 42] }, // Cor do cabeçalho da tabela
+                alternateRowStyles: { fillColor: [241, 245, 249] }, // Cinza bem claro
+                styles: { font: 'helvetica', fontSize: 10 }
+            });
+
+            // Força o download
+            doc.save("meu_historico_concursos.pdf");
+        }
+    </script>
+</body>
+</html>
