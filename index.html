@@ -2,14 +2,14 @@
 <html lang="pt-br">
 <head>
     <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-Y9BH2YB009"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Y9BH2YB009"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
 
-  gtag('config', 'G-Y9BH2YB009');
-</script>
+      gtag('config', 'G-Y9BH2YB009');
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Timer do Concurseiro</title>
@@ -22,12 +22,14 @@
         /* =========================================
            1. ESTILOS GLOBAIS E TRANSIÇÕES
            ========================================= */
+        * { box-sizing: border-box; }
+        
         body, html {
             margin: 0; padding: 0;
             font-family: 'Inter', 'Segoe UI', sans-serif;
             background-color: #0F172A; 
             color: #F8FAFC;
-            height: 100vh;
+            min-height: 100vh;
             display: flex;
             transition: background-color 0.8s ease;
         }
@@ -38,7 +40,8 @@
            2. MENU LATERAL
            ========================================= */
         .sidebar {
-            width: 160px; background-color: #1E293B;
+            width: 160px; min-width: 160px;
+            background-color: #1E293B;
             display: flex; flex-direction: column;
             align-items: center; padding-top: 30px;
             box-shadow: 2px 0 10px rgba(0,0,0,0.3); z-index: 10;
@@ -55,135 +58,211 @@
         .sidebar-item.active { background-color: #00E5FF; color: #0F172A; font-weight: bold; }
 
         /* =========================================
-           3. ÁREA PRINCIPAL & BARRA DE META
+           3. ÁREA PRINCIPAL & CABEÇALHO
            ========================================= */
         .main-content {
-            flex-grow: 1; display: flex; flex-direction: column; position: relative;
-        }
-
-        .progress-container {
-            width: 100%; height: 6px; background-color: #334155; position: absolute; top: 0;
-        }
-        .progress-bar {
-            height: 100%; background-color: #10B981; width: 0%; transition: width 1s;
+            flex-grow: 1; display: flex; flex-direction: column; position: relative; min-width: 0;
         }
 
         .top-nav {
-            height: 70px; display: flex; flex-direction: column;
-            justify-content: center; align-items: center;
-            border-bottom: 1px solid #334155; margin-top: 6px;
+            padding: 15px 20px; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; gap: 10px;
+            border-bottom: 1px solid #334155;
         }
 
+        .nav-linha-1 { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; justify-content: center; }
+        
         .logo { 
-            font-size: 22px; font-weight: 800; letter-spacing: 1px; color: #00E5FF; 
+            font-size: 24px; font-weight: 800; letter-spacing: 1px; color: #00E5FF; 
             display: flex; align-items: center;
         }
         .beta-badge {
-            background-color: #F59E0B; color: #0F172A; font-size: 10px;
-            font-weight: 900; padding: 2px 6px; border-radius: 4px;
-            margin-left: 10px; letter-spacing: normal;
+            background-color: #F59E0B; color: #0F172A; font-size: 11px;
+            font-weight: 900; padding: 2px 6px; border-radius: 4px; margin-left: 10px;
+        }
+
+        .streak-badge {
+            background: linear-gradient(45deg, #FF512F, #DD2476);
+            color: white; padding: 6px 15px; border-radius: 20px;
+            font-weight: bold; font-size: 14px; display: flex; align-items: center;
+            box-shadow: 0 4px 10px rgba(221, 36, 118, 0.4);
         }
         
-        .header-actions { display: flex; gap: 10px; margin-top: 5px; align-items: center; }
+        .header-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: center; }
         
         .action-link { 
-            font-size: 12px; color: #94A3B8; cursor: pointer; 
-            padding: 4px 10px; border-radius: 15px; transition: 0.2s;
-            background: transparent; border: 1px solid transparent;
+            font-size: 13px; font-weight: 500; color: #94A3B8; cursor: pointer; 
+            padding: 6px 12px; border-radius: 15px; transition: 0.2s;
+            background: rgba(255, 255, 255, 0.05); border: 1px solid #334155;
         }
-        .action-link:hover { background-color: #334155; color: #fff; }
+        .action-link:hover { background-color: #334155; color: #fff; border-color: #475569; }
 
-        select.action-link {
-            background-color: #1E293B; border: 1px solid #334155; color: #94A3B8;
-            outline: none; padding: 2px 8px; cursor: pointer;
+        select.action-link { outline: none; padding: 5px 10px; cursor: pointer; }
+
+        /* =========================================
+           4. BARRA DE PROGRESSO COM PORCENTAGEM
+           ========================================= */
+        .progress-wrapper { padding: 15px 30px; background-color: transparent; }
+        .progress-container {
+            width: 100%; height: 22px; background-color: #1E293B; 
+            border-radius: 12px; border: 1px solid #334155; overflow: hidden;
+            position: relative; box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+        }
+        .progress-bar {
+            height: 100%; background: linear-gradient(90deg, #10B981, #34D399); 
+            width: 0%; transition: width 1s ease-in-out;
+            display: flex; align-items: center; justify-content: flex-end;
+            padding-right: 10px; color: #064E3B; font-weight: bold; font-size: 12px;
         }
 
         /* =========================================
-           4. CONTAINERS E RELÓGIO
+           5. CONTAINERS E RELÓGIO
            ========================================= */
         .view-container {
-            flex-grow: 1; display: flex; flex-direction: column;
-            justify-content: center; align-items: center;
+            min-height: 480px; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; padding: 20px;
         }
         .hidden { display: none !important; }
 
         .status-text {
-            color: #F1F5F9; font-size: 20px; letter-spacing: 2px;
-            margin-bottom: 5px; text-transform: uppercase;
+            color: #F1F5F9; font-size: 22px; letter-spacing: 2px;
+            margin-bottom: 15px; text-transform: uppercase; font-weight: bold;
         }
 
         .shortcuts { 
-            margin-bottom: 20px; display: flex; gap: 10px; 
-            flex-wrap: wrap; justify-content: center; max-width: 500px;
+            margin-bottom: 25px; display: flex; gap: 10px; 
+            flex-wrap: wrap; justify-content: center; max-width: 600px;
         }
         .btn-shortcut {
             background: transparent; border: 1px solid #00E5FF; color: #00E5FF;
-            padding: 5px 12px; border-radius: 20px; font-size: 12px; cursor: pointer;
-            transition: 0.2s;
+            padding: 6px 14px; border-radius: 20px; font-size: 13px; cursor: pointer;
+            transition: 0.2s; font-weight: 500;
         }
         .btn-shortcut:hover { background: #00E5FF; color: #0F172A; }
         .btn-shortcut.pausa { border-color: #10B981; color: #10B981; }
         .btn-shortcut.pausa:hover { background: #10B981; color: white; }
 
         .time-display {
-            font-size: 130px; color: #00E5FF; font-family: 'Courier New', monospace; 
-            font-weight: bold; text-shadow: 0 0 20px rgba(0, 229, 255, 0.4);
-            line-height: 1; margin-bottom: 20px;
+            font-size: 150px; color: #00E5FF; font-family: 'Courier New', monospace; 
+            font-weight: bold; text-shadow: 0 0 25px rgba(0, 229, 255, 0.4);
+            line-height: 1; margin-bottom: 25px; transition: transform 0.2s;
         }
 
         /* =========================================
-           5. INPUT E BOTÕES
+           6. INPUT E BOTÕES
            ========================================= */
         .input-materia {
-            padding: 12px 20px; border-radius: 8px; border: 1px solid #334155;
+            padding: 14px 20px; border-radius: 10px; border: 1px solid #334155;
             background-color: #1E293B; color: white; font-size: 16px;
-            width: 300px; margin-bottom: 30px; text-align: center;
-            outline: none; transition: border-color 0.2s;
+            width: 320px; margin-bottom: 35px; text-align: center;
+            outline: none; transition: border-color 0.2s; box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
         }
         .input-materia:focus { border-color: #00E5FF; }
 
-        .buttons { display: flex; gap: 15px; }
+        .buttons { display: flex; gap: 15px; align-items: center; }
         .btn {
             padding: 15px 30px; border: none; border-radius: 30px;
             font-size: 15px; font-weight: bold; cursor: pointer; text-transform: uppercase; 
-            transition: transform 0.2s, opacity 0.2s;
+            transition: all 0.2s; display: flex; align-items: center; justify-content: center;
         }
         .btn:hover { transform: translateY(-2px); opacity: 0.9; }
 
         .btn-edit { background-color: #334155; color: white; }
         .btn-save { background-color: #F43F5E; color: white; }
-        .btn-start { background-color: #10B981; color: white; width: 130px; }
-        .btn-pause { background-color: #F59E0B; color: white; width: 130px; }
+        
+        /* DESTAQUE DO BOTÃO INICIAR */
+        .btn-start { 
+            background-color: #10B981; color: white; width: 170px; height: 60px;
+            font-size: 20px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+        }
+        .btn-start:hover { box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6); transform: scale(1.05); }
+        .btn-pause { background-color: #F59E0B; color: white; width: 170px; height: 60px; font-size: 20px; }
         
         .history-actions { display: flex; gap: 10px; margin-top: 15px; }
         .btn-export { background-color: #00E5FF; color: #0F172A; }
-        .btn-pdf { background-color: #8B5CF6; color: white; } /* Roxo elegante para o PDF */
+        .btn-pdf { background-color: #8B5CF6; color: white; }
         .btn-clear { background-color: transparent; border: 1px solid #F43F5E; color: #F43F5E; }
         .btn-clear:hover { background-color: #F43F5E; color: white; }
 
         /* =========================================
-           6. HISTÓRICO
+           7. HISTÓRICO E BOTÃO DE EXCLUIR
            ========================================= */
         .dashboard-stats {
-            background: #1E293B; padding: 15px 30px; border-radius: 12px;
+            background: #1E293B; padding: 20px 40px; border-radius: 12px;
             margin-bottom: 20px; text-align: center; border: 1px solid #334155;
         }
-        .dashboard-stats h2 { margin: 0 0 5px 0; color: #10B981; font-size: 28px; }
-        .dashboard-stats p { margin: 0; color: #94A3B8; font-size: 14px; }
+        .dashboard-stats h2 { margin: 0 0 5px 0; color: #10B981; font-size: 32px; }
+        .dashboard-stats p { margin: 0; color: #94A3B8; font-size: 15px; }
 
         .history-list {
             width: 90%; max-width: 700px; max-height: 350px; overflow-y: auto; 
-            background: #1E293B; border-radius: 12px; padding: 20px;
+            background: #1E293B; border-radius: 12px; padding: 20px; border: 1px solid #334155;
         }
         .history-item {
-            display: flex; justify-content: space-between; padding: 12px 10px; 
-            border-bottom: 1px solid #334155; color: #94A3B8;
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 12px 10px; border-bottom: 1px solid #334155; color: #94A3B8;
         }
         .history-item span { color: #F8FAFC; font-weight: bold; }
-        .history-item .tag { color: #00E5FF; font-style: italic; }
+        .history-item .tag { color: #00E5FF; font-style: italic; flex-grow: 1; padding: 0 15px; }
+        
+        .btn-delete-item {
+            background: rgba(244, 63, 94, 0.1); border: 1px solid #F43F5E; color: #F43F5E;
+            border-radius: 8px; padding: 5px 10px; cursor: pointer; transition: 0.2s;
+            display: flex; align-items: center; gap: 5px; font-size: 12px; margin-left: 15px;
+        }
+        .btn-delete-item:hover { background: #F43F5E; color: white; }
+
+        /* =========================================
+           8. MODAL DE META ALCANÇADA
+           ========================================= */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.9); display: flex; justify-content: center;
+            align-items: center; z-index: 9999; opacity: 0; visibility: hidden;
+            transition: all 0.4s ease;
+        }
+        .modal-overlay.show { opacity: 1; visibility: visible; }
+        .modal-content {
+            background: #1E293B; border: 2px solid #10B981; border-radius: 20px;
+            padding: 40px; text-align: center; max-width: 450px;
+            box-shadow: 0 10px 40px rgba(16, 185, 129, 0.3); transform: scale(0.8); transition: all 0.4s ease;
+        }
+        .modal-overlay.show .modal-content { transform: scale(1); }
+        .modal-content h2 { font-size: 28px; color: #10B981; margin-top: 0; margin-bottom: 15px; }
+        .modal-content p { color: #CBD5E1; font-size: 16px; margin-bottom: 30px; line-height: 1.5; }
+        .modal-content .btn-start { width: 100%; height: 50px; font-size: 16px; }
+
+        /* =========================================
+           9. SEÇÃO DE SEO E RODAPÉ
+           ========================================= */
+        .conteudo-seo {
+            max-width: 850px; margin: 20px auto 40px auto; padding: 30px 25px;
+            background: #1E293B; border-radius: 16px; border: 1px solid #334155;
+            color: #CBD5E1; line-height: 1.7;
+        }
+        .conteudo-seo h2 { color: #00E5FF; font-size: 22px; margin-top: 0; }
+        .conteudo-seo h3 { color: #F8FAFC; font-size: 18px; margin-top: 25px; }
+        .conteudo-seo p { font-size: 15px; margin-bottom: 15px; }
+
+        footer {
+            background-color: #0B1120; border-top: 1px solid #334155;
+            padding: 30px 20px; text-align: center; font-size: 14px;
+            color: #94A3B8; margin-top: auto;
+        }
+        footer a { color: #00E5FF; text-decoration: none; font-weight: 500; }
+        footer a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
+
+    <!-- MODAL DE META -->
+    <div class="modal-overlay" id="modal-meta">
+        <div class="modal-content">
+            <h2>🎉 Meta Alcançada! 🏆</h2>
+            <p>Incrível! Você acaba de bater a sua meta diária de estudos. Todo o esforço de hoje é a sua aprovação de amanhã. Continue firme!</p>
+            <button class="btn btn-start" onclick="fecharModalMeta()">Continuar Focado</button>
+        </div>
+    </div>
 
     <!-- SIDEBAR -->
     <div class="sidebar">
@@ -192,26 +271,33 @@
         <div class="sidebar-item" id="tab-historico" onclick="mudarAba('historico')">Histórico</div>
     </div>
 
+    <!-- ÁREA PRINCIPAL -->
     <div class="main-content">
-        <!-- BARRA DE PROGRESSO E HEADER COM SELEÇÃO DE SOM -->
-        <div class="progress-container"><div class="progress-bar" id="meta-bar"></div></div>
+        <!-- CABEÇALHO -->
         <div class="top-nav">
-            <div class="logo">
-                Timer do Concurseiro. 
-                <span class="beta-badge">VERSÃO BETA</span>
+            <div class="nav-linha-1">
+                <div class="logo">Timer do Concurseiro.<span class="beta-badge">VERSÃO BETA</span></div>
+                <div class="streak-badge" id="streak-display">🔥 0 dias na meta</div>
             </div>
             <div class="header-actions">
-                <div class="action-link" id="texto-meta" onclick="editarMeta()" title="Alterar meta">
-                    Meta: 4h ✏️
+                <div class="action-link" id="texto-meta" onclick="editarMeta()" title="Clique para alterar a meta">
+                    Meta: 0h estudadas de 4h ✏️
                 </div>
                 <div class="action-link" onclick="zerarProgressoHoje()" title="Zerar horas de hoje">
                     Zerar Hoje 🔄
                 </div>
-                <select id="som-alarme" class="action-link" onchange="salvarPreferenciaSom()">
-                    <option value="suave">🔔 Som: Suave</option>
-                    <option value="despertador">⏰ Som: Despertador</option>
-                    <option value="alerta">🚨 Som: Alerta</option>
+                <select id="som-alarme" class="action-link" onchange="testarSom()">
+                    <option value="Suave">🔔 Som: Suave</option>
+                    <option value="Loop">⏰ Som: Despertador (Loop)</option>
+                    <option value="Alerta">🚨 Som: Alerta Forte</option>
                 </select>
+            </div>
+        </div>
+
+        <!-- BARRA DE PROGRESSO -->
+        <div class="progress-wrapper">
+            <div class="progress-container">
+                <div class="progress-bar" id="meta-bar"><span id="meta-porcentagem">0%</span></div>
             </div>
         </div>
 
@@ -261,9 +347,39 @@
             <div class="history-actions">
                 <button class="btn btn-export" onclick="exportarCSV()">📥 Excel</button>
                 <button class="btn btn-pdf" onclick="exportarPDF()">📄 PDF</button>
-                <button class="btn btn-clear" onclick="limparHistorico()">🗑️ Limpar</button>
+                <button class="btn btn-clear" onclick="limparHistorico()">🗑️ Apagar Tudo</button>
             </div>
         </div>
+
+        <!-- ========================================== -->
+        <!-- SEÇÃO DE CONTEÚDO (SEO PARA O GOOGLE)      -->
+        <!-- ========================================== -->
+        <section class="conteudo-seo">
+            <h2>Por que usar um Timer para Concursos?</h2>
+            <p>O <strong>Timer do Concurseiro</strong> foi criado para ajudar estudantes a manterem o foco total. Seja estudando para concursos públicos, ENEM ou OAB, o controle do tempo é fundamental para evitar a procrastinação e medir seu desempenho real.</p>
+            
+            <h3>O que são Horas Líquidas?</h3>
+            <p>Diferente das "horas brutas" (o tempo que você passa sentado na cadeira), as horas líquidas representam o tempo exato em que seu cérebro está focado no material. Se você levanta para beber água ou olhar o celular, o cronômetro deve ser pausado. Nossa ferramenta ajuda você a ter esse controle rigoroso.</p>
+            
+            <h3>A Técnica Pomodoro nos Estudos</h3>
+            <p>A Técnica Pomodoro intercala blocos de foco intenso (geralmente 25 a 50 minutos) com pausas curtas (5 a 10 minutos). Esse método cientificamente comprovado ajuda a evitar a fadiga mental, aumenta a retenção de conteúdo e mantém você motivado durante todo o ciclo de estudos.</p>
+        </section>
+
+        <!-- RODAPÉ (FOOTER) -->
+        <footer>
+            <p style="margin-bottom: 12px;">&copy; 2026 Timer do Concurseiro. Todos os direitos reservados.</p>
+            <p style="margin-bottom: 12px;">
+                <a href="privacidade.html">Política de Privacidade</a> &nbsp;|&nbsp; 
+                <a href="termos.html">Termos de Uso</a>
+            </p>
+            <p style="margin-bottom: 0; font-size: 13px;">Contato: <em>timerdoconcurseiro@gmail.com</em></p>
+        </footer>
+    </div>
+
+    <!-- AVISO DE COOKIES (BANNER) -->
+    <div id="cookie-banner" style="position: fixed; bottom: 0; left: 0; width: 100%; background: #0B1120; color: #F8FAFC; padding: 15px; text-align: center; z-index: 1000; display: none; font-size: 14px; border-top: 1px solid #334155;">
+        Utilizamos cookies para métricas e para melhorar sua experiência. Ao continuar, você concorda com nossa <a href="privacidade.html" style="color: #00E5FF; text-decoration: underline;">Política de Privacidade</a>.
+        <button id="aceitar-cookies" style="background: #10B981; color: white; border: none; padding: 8px 18px; margin-left: 15px; cursor: pointer; border-radius: 20px; font-weight: bold;">Entendi</button>
     </div>
 
     <!-- =========================================
@@ -286,7 +402,8 @@
         let rodandoCrono = false;
         let horaInicioCrono = 0; 
 
-        let audioCtx = null;
+        // Áudio via MP3 local
+        let tocadorAudio = null;
 
         const workerBlob = new Blob([`
             let timerID = null;
@@ -315,15 +432,12 @@
                         document.getElementById('btn-play-temp').classList.replace('btn-pause', 'btn-start');
                         document.title = "✅ TEMPO ESGOTADO!";
                         
-                        tocarAlarme();
+                        tocarAlarmeFim(); // Som Mp3
                         salvarSessao('Temporizador', tempoInicialTemp, document.getElementById('materia-temp').value);
                         
-                        setTimeout(() => {
-                            aplicarAtalho(30, 'foco');
-                        }, 2000);
+                        setTimeout(() => { aplicarAtalho(30, 'foco'); }, 2000);
                     }
                 }
-                
                 if (rodandoCrono) {
                     tempoDecorrido = Math.floor((Date.now() - horaInicioCrono) / 1000);
                     atualizarDisplayCronometro();
@@ -331,66 +445,47 @@
             }
         };
 
-        window.onload = function() { atualizarPainelEProgresso(); };
+        window.onload = function() { 
+            atualizarPainelEProgresso();
+            calcularStreak();
+        };
 
         window.addEventListener('beforeunload', function (e) {
             if (rodandoTemp || rodandoCrono) { e.preventDefault(); e.returnValue = ''; }
         });
 
-        // --- SISTEMA DE ÁUDIO SUAVE E PERSONALIZADO ---
-        function inicializarAudio() {
-            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-        }
+        document.addEventListener("DOMContentLoaded", function() {
+            if (!localStorage.getItem("cookiesAceitos")) { document.getElementById("cookie-banner").style.display = "block"; }
+            document.getElementById("aceitar-cookies").addEventListener("click", function() {
+                localStorage.setItem("cookiesAceitos", "true");
+                document.getElementById("cookie-banner").style.display = "none";
+            });
+        });
 
-        function salvarPreferenciaSom() {
+        // --- SISTEMA DE ÁUDIO MP3 ---
+        function testarSom() {
             localStorage.setItem('somAlarme', document.getElementById('som-alarme').value);
-            inicializarAudio();
-            tocarAlarme(true); 
+            tocarAlarmeFim(true); // Toca por apenas 2 segundos para testar
         }
 
-        function tocarAlarme(amostra = false) {
-            if (!audioCtx) inicializarAudio();
-            const tipoSom = document.getElementById('som-alarme').value;
-            const osc = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
-            osc.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
+        function tocarAlarmeFim(amostra = false) {
+            if(tocadorAudio) { tocadorAudio.pause(); tocadorAudio.currentTime = 0; }
+            let somEscolhido = document.getElementById('som-alarme').value; // 'Suave', 'Loop', 'Alerta'
             
-            let duracao = amostra ? 2 : 5; 
-            let tempoAtual = audioCtx.currentTime;
+            // Busca os audios na pasta ./audio/
+            tocadorAudio = new Audio(`./audio/${somEscolhido}.mp3`);
+            tocadorAudio.play().catch(e => console.log("O navegador bloqueou o áudio. O usuário precisa interagir com a tela primeiro."));
 
-            if (tipoSom === 'suave') {
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(440, tempoAtual); 
-                gainNode.gain.setValueAtTime(0, tempoAtual);
-                for(let i = 0; i < duracao; i++) {
-                    gainNode.gain.linearRampToValueAtTime(0.6, tempoAtual + i + 0.5);
-                    gainNode.gain.linearRampToValueAtTime(0, tempoAtual + i + 1);
+            let duracao = amostra ? 2000 : 6000; // 2s de teste, 6s reais ao fim do tempo
+            setTimeout(() => {
+                if(tocadorAudio) {
+                    tocadorAudio.pause();
+                    tocadorAudio.currentTime = 0;
                 }
-                osc.start(tempoAtual); osc.stop(tempoAtual + duracao);
-            } 
-            else if (tipoSom === 'despertador') {
-                osc.type = 'square';
-                osc.frequency.setValueAtTime(600, tempoAtual);
-                gainNode.gain.setValueAtTime(0, tempoAtual);
-                for(let i = 0; i < duracao * 2; i += 0.5) {
-                    gainNode.gain.setValueAtTime(0.3, tempoAtual + i);
-                    gainNode.gain.setValueAtTime(0, tempoAtual + i + 0.2);
-                }
-                osc.start(tempoAtual); osc.stop(tempoAtual + duracao);
-            } 
-            else if (tipoSom === 'alerta') {
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(500, tempoAtual);
-                gainNode.gain.setValueAtTime(0.1, tempoAtual);
-                gainNode.gain.linearRampToValueAtTime(0.5, tempoAtual + 0.5);
-                gainNode.gain.setValueAtTime(0.5, tempoAtual + duracao - 0.5);
-                gainNode.gain.linearRampToValueAtTime(0, tempoAtual + duracao);
-                osc.start(tempoAtual); osc.stop(tempoAtual + duracao);
-            }
+            }, duracao);
         }
 
+        // --- SISTEMA DE DATAS ---
         function obterDataHoraLocal() {
             let agora = new Date();
             let dia = String(agora.getDate()).padStart(2, '0');
@@ -398,10 +493,47 @@
             let ano = agora.getFullYear();
             let horas = String(agora.getHours()).padStart(2, '0');
             let min = String(agora.getMinutes()).padStart(2, '0');
-            return {
-                dataApenas: `${dia}/${mes}/${ano}`,
-                dataCompleta: `${dia}/${mes}/${ano} ${horas}:${min}`
-            };
+            return { dataApenas: `${dia}/${mes}/${ano}`, dataCompleta: `${dia}/${mes}/${ano} ${horas}:${min}` };
+        }
+
+        function formatarDataGenerica(dataObj) {
+            let dia = String(dataObj.getDate()).padStart(2, '0');
+            let mes = String(dataObj.getMonth() + 1).padStart(2, '0');
+            let ano = dataObj.getFullYear();
+            return `${dia}/${mes}/${ano}`;
+        }
+
+        // --- STREAK (DIAS SEGUIDOS) ---
+        function calcularStreak() {
+            let historico = JSON.parse(localStorage.getItem('historicoEstudos')) || [];
+            let metaAtual = parseInt(localStorage.getItem('metaUsuario')) || (4 * 3600);
+            
+            let diasEstudados = {};
+            historico.forEach(sessao => {
+                if (!sessao.materia.toLowerCase().includes("pausa")) {
+                    diasEstudados[sessao.dataData] = (diasEstudados[sessao.dataData] || 0) + sessao.segundos;
+                }
+            });
+
+            let streak = 0;
+            let dataCheck = new Date();
+            let dataHojeStr = formatarDataGenerica(dataCheck);
+            let hojeBatido = (diasEstudados[dataHojeStr] >= metaAtual);
+
+            // Volta 1 dia no tempo
+            dataCheck.setDate(dataCheck.getDate() - 1);
+            
+            // Verifica o passado sucessivamente
+            while (true) {
+                let strData = formatarDataGenerica(dataCheck);
+                if (diasEstudados[strData] >= metaAtual) {
+                    streak++;
+                    dataCheck.setDate(dataCheck.getDate() - 1);
+                } else { break; }
+            }
+            if (hojeBatido) { streak++; } // Soma hoje se bateu
+
+            document.getElementById('streak-display').innerHTML = `🔥 ${streak} dia${streak !== 1 ? 's' : ''} na meta`;
         }
 
         function editarMeta() {
@@ -411,6 +543,7 @@
                 metaDiariaSegundos = parseInt(input) * 3600; 
                 localStorage.setItem('metaUsuario', metaDiariaSegundos); 
                 atualizarPainelEProgresso();
+                calcularStreak();
             }
         }
 
@@ -420,15 +553,24 @@
                 let dataHoje = obterDataHoraLocal().dataApenas;
                 let novoHistorico = historico.filter(sessao => sessao.dataData !== dataHoje);
                 localStorage.setItem('historicoEstudos', JSON.stringify(novoHistorico));
-                atualizarPainelEProgresso();
+                atualizarPainelEProgresso(); calcularStreak();
                 if(!document.getElementById('view-historico').classList.contains('hidden')) carregarHistorico();
             }
         }
 
         function limparHistorico() {
-            if(confirm("🚨 ATENÇÃO: Apagar TODO o histórico?")) {
+            if(confirm("🚨 ATENÇÃO: Apagar TODO o histórico de todos os dias?")) {
                 localStorage.removeItem('historicoEstudos');
-                carregarHistorico(); atualizarPainelEProgresso();
+                carregarHistorico(); atualizarPainelEProgresso(); calcularStreak();
+            }
+        }
+
+        function deletarItemHistorico(idRegistro) {
+            if(confirm("🗑️ Deseja realmente excluir esta sessão específica do histórico?")) {
+                let historico = JSON.parse(localStorage.getItem('historicoEstudos')) || [];
+                let novoHistorico = historico.filter(s => s.id !== idRegistro);
+                localStorage.setItem('historicoEstudos', JSON.stringify(novoHistorico));
+                carregarHistorico(); atualizarPainelEProgresso(); calcularStreak();
             }
         }
 
@@ -454,17 +596,13 @@
         function aplicarAtalho(minutos, tipo) {
             if (rodandoTemp) return; 
             tempoInicialTemp = minutos * 60;
-            tempoRestante = tempoInicialTemp;
-            modoAtual = tipo;
-            
+            tempoRestante = tempoInicialTemp; modoAtual = tipo;
             let statusText = document.getElementById('status-temp');
             if(tipo === 'pausa') {
-                document.body.classList.add('modo-pausa');
-                statusText.innerText = "Hora de Relaxar";
+                document.body.classList.add('modo-pausa'); statusText.innerText = "Hora de Relaxar";
                 document.getElementById('materia-temp').value = "Pausa / Descanso";
             } else {
-                document.body.classList.remove('modo-pausa');
-                statusText.innerText = "Foco Total";
+                document.body.classList.remove('modo-pausa'); statusText.innerText = "Foco Total";
                 document.getElementById('materia-temp').value = "";
             }
             atualizarDisplayTemporizador();
@@ -483,17 +621,15 @@
         }
 
         function iniciarPausarTemporizador() {
-            inicializarAudio(); 
+            if(tocadorAudio) { tocadorAudio.pause(); tocadorAudio.currentTime = 0; }
             let btn = document.getElementById('btn-play-temp');
             
             if (rodandoTemp) {
-                rodandoTemp = false;
-                timerWorker.postMessage('stop');
+                rodandoTemp = false; timerWorker.postMessage('stop');
                 btn.innerText = "Retomar"; btn.classList.replace('btn-pause', 'btn-start');
                 document.title = "⏸️ Pausado";
             } else {
-                rodandoTemp = true;
-                btn.innerText = "Pausar"; btn.classList.replace('btn-start', 'btn-pause');
+                rodandoTemp = true; btn.innerText = "Pausar"; btn.classList.replace('btn-start', 'btn-pause');
                 horaFimAlvo = Date.now() + (tempoRestante * 1000);
                 timerWorker.postMessage('start'); 
             }
@@ -501,16 +637,12 @@
 
         function salvarTemporizador() {
             let tempoEstudado = tempoInicialTemp - tempoRestante; 
-            if (tempoEstudado > 0) {
-                salvarSessao('Temporizador', tempoEstudado, document.getElementById('materia-temp').value);
-            }
-            rodandoTemp = false; timerWorker.postMessage('stop');
-            tempoRestante = tempoInicialTemp;
+            if (tempoEstudado > 0) { salvarSessao('Temporizador', tempoEstudado, document.getElementById('materia-temp').value); }
+            rodandoTemp = false; timerWorker.postMessage('stop'); tempoRestante = tempoInicialTemp;
             atualizarDisplayTemporizador();
             let btn = document.getElementById('btn-play-temp');
             btn.innerText = "Iniciar"; btn.classList.replace('btn-pause', 'btn-start');
-            document.title = "Timer do Concurseiro";
-            document.getElementById('materia-temp').value = ""; 
+            document.title = "Timer do Concurseiro"; document.getElementById('materia-temp').value = ""; 
         }
 
         function atualizarDisplayCronometro() {
@@ -526,25 +658,19 @@
                 btn.innerText = "Retomar"; btn.classList.replace('btn-pause', 'btn-start');
                 document.title = "⏸️ Pausado";
             } else {
-                rodandoCrono = true;
-                btn.innerText = "Pausar"; btn.classList.replace('btn-start', 'btn-pause');
+                rodandoCrono = true; btn.innerText = "Pausar"; btn.classList.replace('btn-start', 'btn-pause');
                 horaInicioCrono = Date.now() - (tempoDecorrido * 1000);
                 if(!rodandoTemp) timerWorker.postMessage('start');
             }
         }
 
         function salvarCronometro() {
-            if (tempoDecorrido > 0) {
-                salvarSessao('Cronômetro', tempoDecorrido, document.getElementById('materia-crono').value);
-            }
-            rodandoCrono = false; 
-            if(!rodandoTemp) timerWorker.postMessage('stop'); 
-            tempoDecorrido = 0;
-            atualizarDisplayCronometro();
+            if (tempoDecorrido > 0) { salvarSessao('Cronômetro', tempoDecorrido, document.getElementById('materia-crono').value); }
+            rodandoCrono = false; if(!rodandoTemp) timerWorker.postMessage('stop'); 
+            tempoDecorrido = 0; atualizarDisplayCronometro();
             let btn = document.getElementById('btn-play-crono');
             btn.innerText = "Iniciar"; btn.classList.replace('btn-pause', 'btn-start');
-            document.title = "Timer do Concurseiro";
-            document.getElementById('materia-crono').value = ""; 
+            document.title = "Timer do Concurseiro"; document.getElementById('materia-crono').value = ""; 
         }
 
         function salvarSessao(tipo, segundosEstudados, materiaDigitada) {
@@ -553,16 +679,19 @@
             let materiaFinal = materiaDigitada ? materiaDigitada : "Sem matéria";
             
             historico.push({
+                id: Date.now(), // Gerando um ID único
                 dataData: relogioPreciso.dataApenas, 
                 dataHora: relogioPreciso.dataCompleta, 
-                tipo: tipo,
-                materia: materiaFinal,
-                segundos: segundosEstudados, 
-                duracaoTexto: formatarTempo(segundosEstudados)
+                tipo: tipo, materia: materiaFinal,
+                segundos: segundosEstudados, duracaoTexto: formatarTempo(segundosEstudados)
             });
             
             localStorage.setItem('historicoEstudos', JSON.stringify(historico));
-            atualizarPainelEProgresso();
+            atualizarPainelEProgresso(); calcularStreak();
+        }
+
+        function fecharModalMeta() {
+            document.getElementById('modal-meta').classList.remove('show');
         }
 
         function atualizarPainelEProgresso() {
@@ -580,12 +709,31 @@
             let totalM = Math.floor((segundosHoje % 3600) / 60);
             document.getElementById('total-liquido').innerText = `${totalH}h ${totalM}m`;
 
-            let metaHorasNaTela = Math.floor(metaDiariaSegundos / 3600);
-            document.getElementById('texto-meta').innerHTML = `Meta: ${metaHorasNaTela}h ✏️`;
+            let metaHoras = Math.floor(metaDiariaSegundos / 3600);
+            let textoHorasEstudadas = totalH + (totalM / 60); // Para usar nas decimais
+            
+            // Atualiza Texto da Meta
+            let hEstudadaStr = totalH > 0 ? `${totalH}h` : "";
+            let mEstudadaStr = totalM > 0 ? `${totalM}m` : (totalH === 0 ? "0h" : "");
+            document.getElementById('texto-meta').innerHTML = `Meta: ${hEstudadaStr}${mEstudadaStr} de ${metaHoras}h ✏️`;
 
+            // Calcula % da Barra
             let porcentagem = (segundosHoje / metaDiariaSegundos) * 100;
-            if (porcentagem > 100) porcentagem = 100; 
-            document.getElementById('meta-bar').style.width = porcentagem + "%";
+            let porcRedonda = Math.floor(porcentagem);
+            if (porcRedonda > 100) porcRedonda = 100; 
+            
+            let barra = document.getElementById('meta-bar');
+            barra.style.width = porcRedonda + "%";
+            document.getElementById('meta-porcentagem').innerText = porcRedonda > 5 ? porcRedonda + "%" : "";
+
+            // Verifica comemoração de Meta
+            if (porcRedonda === 100) {
+                let dataUltimaComemoracao = localStorage.getItem('comemorouMetaData');
+                if (dataUltimaComemoracao !== dataHoje) {
+                    document.getElementById('modal-meta').classList.add('show');
+                    localStorage.setItem('comemorouMetaData', dataHoje);
+                }
+            }
         }
 
         function carregarHistorico() {
@@ -605,125 +753,38 @@
                     <div><span>${sessao.dataHora.split(' ')[1]}</span> - ${sessao.dataData}</div>
                     <div class="tag">${sessao.materia}</div>
                     <div>⏱️ <span>${sessao.duracaoTexto}</span></div>
+                    <button class="btn-delete-item" onclick="deletarItemHistorico(${sessao.id})" title="Apagar Registro">🗑️ Excluir</button>
                 `;
                 listaHtml.appendChild(div);
             });
         }
 
-        // EXPORTAÇÃO EXCEL (CSV)
         function exportarCSV() {
             let historico = JSON.parse(localStorage.getItem('historicoEstudos')) || [];
             if (historico.length === 0) { alert("Não há dados para exportar."); return; }
-
             let csvContent = "Data e Hora,Tipo,Materia,Tempo(HH:MM:SS),Segundos Totais\n";
             historico.forEach(row => {
                 let matSegura = row.materia.replace(/,/g, ''); 
                 csvContent += `${row.dataHora},${row.tipo},${matSegura},${row.duracaoTexto},${row.segundos}\n`;
             });
-
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = "meu_historico_concursos.csv";
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            link.href = URL.createObjectURL(blob); link.download = "meu_historico_concursos.csv";
+            document.body.appendChild(link); link.click(); document.body.removeChild(link);
         }
 
-        // NOVA FUNÇÃO: EXPORTAÇÃO PARA PDF
         function exportarPDF() {
             let historico = JSON.parse(localStorage.getItem('historicoEstudos')) || [];
             if (historico.length === 0) { alert("Não há dados para exportar."); return; }
-
-            // Verifica se a biblioteca jspdf carregou corretamente
-            if (!window.jspdf) {
-                alert("Erro ao carregar o gerador de PDF. Verifique sua conexão com a internet.");
-                return;
-            }
-
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-
-            // Título e Cabeçalho do PDF
-            doc.setFontSize(18);
-            doc.setTextColor(15, 23, 42); // Azul escuro
-            doc.text("Relatório de Horas Líquidas", 14, 20);
-            
-            doc.setFontSize(11);
-            doc.setTextColor(100, 100, 100);
-            doc.text("Timer do Concurseiro - Histórico Pessoal", 14, 28);
-
-            // Preparando as linhas e colunas para a tabela
+            if (!window.jspdf) { alert("Erro ao carregar gerador de PDF."); return; }
+            const { jsPDF } = window.jspdf; const doc = new jsPDF();
+            doc.setFontSize(18); doc.setTextColor(15, 23, 42); doc.text("Relatório de Horas Líquidas", 14, 20);
+            doc.setFontSize(11); doc.setTextColor(100, 100, 100); doc.text("Timer do Concurseiro - Histórico Pessoal", 14, 28);
             const colunas = ["Data e Hora", "Tipo de Estudo", "Matéria / Assunto", "Tempo Estudado"];
-            const linhas = historico.map(row => [
-                row.dataHora,
-                row.tipo,
-                row.materia,
-                row.duracaoTexto
-            ]);
-
-            // Gerando a tabela zebrada
-            doc.autoTable({
-                startY: 35,
-                head: [colunas],
-                body: linhas,
-                theme: 'striped',
-                headStyles: { fillColor: [15, 23, 42] }, // Cor do cabeçalho da tabela
-                alternateRowStyles: { fillColor: [241, 245, 249] }, // Cinza bem claro
-                styles: { font: 'helvetica', fontSize: 10 }
-            });
-
-            // Força o download
+            const linhas = historico.map(row => [row.dataHora, row.tipo, row.materia, row.duracaoTexto]);
+            doc.autoTable({ startY: 35, head: [colunas], body: linhas, theme: 'striped', headStyles: { fillColor: [15, 23, 42] }});
             doc.save("meu_historico_concursos.pdf");
         }
-    </script>
-    <!-- ========================================== -->
-    <!-- SEÇÃO DE CONTEÚDO (SEO PARA O GOOGLE)      -->
-    <!-- ========================================== -->
-    <section class="conteudo-seo" style="max-width: 800px; margin: 40px auto; padding: 20px; font-family: sans-serif; color: #333; line-height: 1.6;">
-        <h2>Por que usar um Timer para Concursos?</h2>
-        <p>O <strong>Timer do Concurseiro</strong> foi criado para ajudar estudantes a manterem o foco total. Seja estudando para concursos públicos, ENEM ou OAB, o controle do tempo é fundamental para evitar a procrastinação e medir seu desempenho real.</p>
-        
-        <h3>O que são Horas Líquidas?</h3>
-        <p>Diferente das "horas brutas" (o tempo que você passa sentado na cadeira), as horas líquidas representam o tempo exato em que seu cérebro está focado no material. Se você levanta para beber água ou olhar o celular, o cronômetro deve ser pausado. Nossa ferramenta ajuda você a ter esse controle rigoroso.</p>
-        
-        <h3>A Técnica Pomodoro nos Estudos</h3>
-        <p>A Técnica Pomodoro intercala blocos de foco intenso (geralmente 25 a 50 minutos) com pausas curtas (5 a 10 minutos). Esse método cientificamente comprovado ajuda a evitar a fadiga mental, aumenta a retenção de conteúdo e mantém você motivado durante todo o ciclo de estudos.</p>
-    </section>
-
-    <!-- ========================================== -->
-    <!-- RODAPÉ (FOOTER)                            -->
-    <!-- ========================================== -->
-    <footer style="text-align: center; padding: 20px; background-color: #f1f1f1; font-family: sans-serif; font-size: 14px;">
-        <p>&copy; 2026 Timer do Concurseiro. Todos os direitos reservados.</p>
-        <p>
-            <a href="privacidade.html" style="color: #333; text-decoration: none;">Política de Privacidade</a> | 
-            <a href="termos.html" style="color: #333; text-decoration: none;">Termos de Uso</a>
-        </p>
-        <p>Contato: <em>timerdoconcurseiro@gmail.com</em></p>
-    </footer>
-
-    <!-- ========================================== -->
-    <!-- AVISO DE COOKIES (BANNER)                  -->
-    <!-- ========================================== -->
-    <div id="cookie-banner" style="position: fixed; bottom: 0; left: 0; width: 100%; background: #222; color: #fff; padding: 15px; text-align: center; z-index: 1000; display: none; font-family: sans-serif;">
-        Utilizamos cookies para métricas e para melhorar sua experiência. Ao continuar, você concorda com nossa <a href="privacidade.html" style="color: #4CAF50;">Política de Privacidade</a>.
-        <button id="aceitar-cookies" style="background: #4CAF50; color: white; border: none; padding: 8px 16px; margin-left: 15px; cursor: pointer; border-radius: 4px;">Entendi</button>
-    </div>
-
-    <!-- SCRIPT DO BANNER DE COOKIES -->
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            // Verifica se o usuário já aceitou os cookies
-            if (!localStorage.getItem("cookiesAceitos")) {
-                document.getElementById("cookie-banner").style.display = "block";
-            }
-            // Quando clicar em "Entendi", salva no navegador e esconde o banner
-            document.getElementById("aceitar-cookies").addEventListener("click", function() {
-                localStorage.setItem("cookiesAceitos", "true");
-                document.getElementById("cookie-banner").style.display = "none";
-            });
-        });
     </script>
 </body>
 </html>
