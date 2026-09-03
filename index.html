@@ -593,9 +593,10 @@
         }
 
         function calcularStreak() {
-            let historico = JSON.parse(localStorage.getItem('historicoEstudos')) || [];
+        let historico = JSON.parse(localStorage.getItem('historicoEstudos')) || [];
             let metaAtual = parseInt(localStorage.getItem('metaUsuario')) || (4 * 3600);
             
+            // 1. Soma o tempo estudado por dia
             let diasEstudados = {};
             historico.forEach(sessao => {
                 if (!sessao.materia.toLowerCase().includes("pausa")) {
@@ -603,24 +604,17 @@
                 }
             });
 
-            let streak = 0;
-            let dataCheck = new Date();
-            let dataHojeStr = formatarDataGenerica(dataCheck);
-            let hojeBatido = (diasEstudados[dataHojeStr] >= metaAtual);
-
-            dataCheck.setDate(dataCheck.getDate() - 1);
-            
-            while (true) {
-                let strData = formatarDataGenerica(dataCheck);
-                if (diasEstudados[strData] >= metaAtual) {
-                    streak++;
-                    dataCheck.setDate(dataCheck.getDate() - 1);
-                } else { break; }
+            // 2. Conta TODOS os dias vitoriosos (acumulativo)
+            let totalDiasVitoriosos = 0;
+            for (let data in diasEstudados) {
+                if (diasEstudados[data] >= metaAtual) {
+                    totalDiasVitoriosos++;
+                }
             }
-            if (hojeBatido) { streak++; } 
 
-            document.getElementById('streak-display').innerHTML = `🔥 ${streak} dia${streak !== 1 ? 's' : ''} na meta`;
-        }
+            // 3. Atualiza a badge no topo
+            document.getElementById('streak-display').innerHTML = `🔥 ${totalDiasVitoriosos} dia${totalDiasVitoriosos !== 1 ? 's' : ''} na meta`;
+        }    
 
         function editarMeta() {
             let metaAtualHoras = Math.floor(metaDiariaSegundos / 3600);
