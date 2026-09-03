@@ -297,15 +297,18 @@
         /* =========================================
            10. BARRA LATERAL DIREITA (WIDGETS/ANÚNCIOS)
            ========================================= */
+        /* =========================================
+           10. BARRA LATERAL DIREITA (WIDGETS/ANÚNCIOS)
+           ========================================= */
         .right-sidebar {
-            width: 350px; /* Aumentamos de 260px para 350px */
-            min-width: 350px;
+            width: 450px; /* Aumentamos de 350px para 450px */
+            min-width: 450px;
             background-color: #0F172A;
             border-left: 1px solid #334155;
-            padding: 25px 20px; /* Aumentamos o respiro lateral */
+            padding: 30px 25px; /* Mais espaço de respiro lateral */
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 25px;
             box-shadow: -2px 0 10px rgba(0,0,0,0.1);
         }
 
@@ -313,7 +316,7 @@
             background-color: #1E293B;
             border: 1px solid #334155;
             border-radius: 12px;
-            padding: 20px; /* Mais espaço interno */
+            padding: 25px; /* Mais espaço interno para o conteúdo respirar */
             text-align: center;
             box-shadow: 0 4px 10px rgba(0,0,0,0.2);
             transition: transform 0.3s ease, border-color 0.3s ease;
@@ -326,9 +329,9 @@
 
         .card-dica h3 {
             color: #F59E0B;
-            font-size: 18px; /* Fonte do título maior */
+            font-size: 20px; /* Título bem maior e chamativo */
             margin-top: 0;
-            margin-bottom: 12px;
+            margin-bottom: 15px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -337,9 +340,9 @@
 
         .card-dica p {
             color: #94A3B8;
-            font-size: 14px; /* Texto de explicação maior e mais legível */
-            line-height: 1.5;
-            margin-bottom: 15px;
+            font-size: 15px; /* Texto maior */
+            line-height: 1.6;
+            margin-bottom: 20px;
         }
 
         .tutorial-media {
@@ -348,11 +351,11 @@
             border: 1px solid #475569;
             background-color: #0B1120;
             display: block;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3); /* Sombrinha no vídeo para destacar */
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4); /* Sombra mais forte para destacar o vídeo */
         }
 
         /* Responsividade: Oculta a barra lateral direita em telas menores (tablets/celulares) */
-        @media (max-width: 1200px) {
+        @media (max-width: 1250px) {
             .right-sidebar { display: none; }
         }
     </style>
