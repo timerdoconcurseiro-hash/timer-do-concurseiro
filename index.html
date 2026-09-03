@@ -32,13 +32,14 @@
             color: #F8FAFC;
             min-height: 100vh;
             display: flex;
+            flex-direction: row; /* Alinha as 3 colunas lado a lado */
             transition: background-color 0.8s ease;
         }
 
         body.modo-pausa { background-color: #064E3B; }
 
         /* =========================================
-           2. MENU LATERAL
+           2. MENU LATERAL ESQUERDO
            ========================================= */
         .sidebar {
             width: 160px; min-width: 160px;
@@ -73,7 +74,7 @@
         }
 
         /* =========================================
-           3. ÁREA PRINCIPAL & CABEÇALHO
+           3. ÁREA PRINCIPAL (CENTRO)
            ========================================= */
         .main-content {
             flex-grow: 1; display: flex; flex-direction: column; position: relative; min-width: 0;
@@ -292,6 +293,66 @@
         }
         footer a { color: #00E5FF; text-decoration: none; font-weight: 500; }
         footer a:hover { text-decoration: underline; }
+
+        /* =========================================
+           10. BARRA LATERAL DIREITA (WIDGETS/ANÚNCIOS)
+           ========================================= */
+        .right-sidebar {
+            width: 260px; min-width: 260px;
+            background-color: #0F172A;
+            border-left: 1px solid #334155;
+            padding: 25px 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+        }
+
+        .card-dica {
+            background-color: #1E293B;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+        
+        .card-dica:hover {
+            transform: translateY(-2px);
+            border-color: #00E5FF;
+        }
+
+        .card-dica h3 {
+            color: #F59E0B; /* Amarelo/Laranja para atenção */
+            font-size: 15px;
+            margin-top: 0;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .card-dica p {
+            color: #94A3B8;
+            font-size: 12px;
+            line-height: 1.4;
+            margin-bottom: 15px;
+        }
+
+        .tutorial-media {
+            width: 100%;
+            border-radius: 8px;
+            border: 1px solid #475569;
+            background-color: #0B1120;
+            display: block;
+        }
+
+        /* Responsividade: Oculta a barra lateral direita em telas menores (tablets/celulares) */
+        @media (max-width: 1100px) {
+            .right-sidebar { display: none; }
+        }
     </style>
 </head>
 <body>
@@ -341,17 +402,16 @@
         </div>
     </div>
 
-    <!-- SIDEBAR -->
+    <!-- 1. SIDEBAR ESQUERDA -->
     <div class="sidebar">
         <div class="sidebar-item active" id="tab-temporizador" onclick="mudarAba('temporizador')">Temporizador</div>
         <div class="sidebar-item" id="tab-cronometro" onclick="mudarAba('cronometro')">Cronômetro</div>
         <div class="sidebar-item" id="tab-historico" onclick="mudarAba('historico')">Histórico</div>
         
-        <!-- NOVO BOTÃO COMO USAR ADICIONADO AQUI -->
         <div class="sidebar-item menu-laranja-vibrante" id="btn-como-usar" onclick="abrirModalComoUsar()">📖 Como Usar</div>
     </div>
 
-    <!-- ÁREA PRINCIPAL -->
+    <!-- 2. ÁREA PRINCIPAL (CENTRO) -->
     <div class="main-content">
         <!-- CABEÇALHO -->
         <div class="top-nav">
@@ -452,6 +512,22 @@
             </p>
             <p style="margin-bottom: 0; font-size: 13px;">Contato: <em>timerdoconcurseiro@gmail.com</em></p>
         </footer>
+    </div>
+
+    <!-- 3. SIDEBAR DIREITA (DICAS E FUTUROS ANÚNCIOS) -->
+    <div class="right-sidebar">
+        <!-- Card de Favoritos -->
+        <div class="card-dica">
+            <h3>⭐ Acesse Mais Rápido</h3>
+            <p>Não perca o foco procurando o site. Arraste para a barra de <strong>Favoritos</strong> do seu navegador!</p>
+            
+            <!-- VÍDEO TUTORIAL MINIATURA -->
+            <!-- Basta salvar a sua gravação com o nome 'tutorial-favoritos.mp4' na mesma pasta -->
+            <video class="tutorial-media" autoplay loop muted playsinline>
+                <source src="tutorial-favoritos.mp4" type="video/mp4">
+                Seu navegador não suporta vídeos.
+            </video>
+        </div>
     </div>
 
     <!-- AVISO DE COOKIES (BANNER) -->
@@ -592,8 +668,9 @@
             return `${dia}/${mes}/${ano}`;
         }
 
+        // --- CÁLCULO DE STREAK (ATUALIZADO: OPÇÃO 1 - DIAS ACUMULADOS) ---
         function calcularStreak() {
-        let historico = JSON.parse(localStorage.getItem('historicoEstudos')) || [];
+            let historico = JSON.parse(localStorage.getItem('historicoEstudos')) || [];
             let metaAtual = parseInt(localStorage.getItem('metaUsuario')) || (4 * 3600);
             
             // 1. Soma o tempo estudado por dia
@@ -614,7 +691,7 @@
 
             // 3. Atualiza a badge no topo
             document.getElementById('streak-display').innerHTML = `🔥 ${totalDiasVitoriosos} dia${totalDiasVitoriosos !== 1 ? 's' : ''} na meta`;
-        }    
+        }
 
         function editarMeta() {
             let metaAtualHoras = Math.floor(metaDiariaSegundos / 3600);
