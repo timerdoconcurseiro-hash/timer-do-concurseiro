@@ -58,6 +58,20 @@
         .sidebar-item:hover { color: #00E5FF; background-color: rgba(0, 229, 255, 0.1); }
         .sidebar-item.active { background-color: #00E5FF; color: #0F172A; font-weight: bold; }
 
+        /* BOTÃO COMO USAR - LARANJA VIBRANTE */
+        .menu-laranja-vibrante {
+            color: #FF6B00;
+            font-weight: bold;
+            margin-top: 15px;
+            border: 1px solid rgba(255, 107, 0, 0.3);
+        }
+        .menu-laranja-vibrante:hover {
+            background-color: rgba(255, 107, 0, 0.1);
+            color: #FF6B00;
+            transform: scale(1.02);
+            border-color: #FF6B00;
+        }
+
         /* =========================================
            3. ÁREA PRINCIPAL & CABEÇALHO
            ========================================= */
@@ -171,7 +185,6 @@
         .btn-edit { background-color: #334155; color: white; }
         .btn-save { background-color: #F43F5E; color: white; }
         
-        /* DESTAQUE DO BOTÃO INICIAR */
         .btn-start { 
             background-color: #10B981; color: white; width: 170px; height: 60px;
             font-size: 20px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
@@ -214,24 +227,51 @@
         .btn-delete-item:hover { background: #F43F5E; color: white; }
 
         /* =========================================
-           8. MODAL DE META ALCANÇADA
+           8. MODAIS (SOBREPOSIÇÃO GERAL)
            ========================================= */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(15, 23, 42, 0.9); display: flex; justify-content: center;
-            align-items: center; z-index: 9999; opacity: 0; visibility: hidden;
-            transition: all 0.4s ease;
+            background: rgba(9, 12, 21, 0.85); backdrop-filter: blur(4px);
+            display: flex; justify-content: center; align-items: center; z-index: 9999; 
+            opacity: 0; visibility: hidden; transition: all 0.4s ease;
         }
         .modal-overlay.show { opacity: 1; visibility: visible; }
-        .modal-content {
+        
+        /* Modal Específico: Meta */
+        .modal-content-meta {
             background: #1E293B; border: 2px solid #10B981; border-radius: 20px;
             padding: 40px; text-align: center; max-width: 450px;
             box-shadow: 0 10px 40px rgba(16, 185, 129, 0.3); transform: scale(0.8); transition: all 0.4s ease;
         }
-        .modal-overlay.show .modal-content { transform: scale(1); }
-        .modal-content h2 { font-size: 28px; color: #10B981; margin-top: 0; margin-bottom: 15px; }
-        .modal-content p { color: #CBD5E1; font-size: 16px; margin-bottom: 30px; line-height: 1.5; }
-        .modal-content .btn-start { width: 100%; height: 50px; font-size: 16px; }
+        .modal-overlay.show .modal-content-meta { transform: scale(1); }
+        .modal-content-meta h2 { font-size: 28px; color: #10B981; margin-top: 0; margin-bottom: 15px; }
+        .modal-content-meta p { color: #CBD5E1; font-size: 16px; margin-bottom: 30px; line-height: 1.5; }
+        .modal-content-meta .btn-start { width: 100%; height: 50px; font-size: 16px; }
+
+        /* Modal Específico: Como Usar */
+        .modal-box-info {
+            background-color: #171A2B; color: #E2E8F0;
+            padding: 30px 40px; border: 1px solid #FF6B00; border-radius: 16px;
+            width: 85%; max-width: 750px; max-height: 85vh; overflow-y: auto;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.6); position: relative;
+            transform: translateY(20px); transition: all 0.4s ease;
+        }
+        .modal-overlay.show .modal-box-info { transform: translateY(0); }
+        .modal-box-info::-webkit-scrollbar { width: 8px; }
+        .modal-box-info::-webkit-scrollbar-thumb { background-color: #FF6B00; border-radius: 4px; }
+        
+        .fechar-modal {
+            position: absolute; top: 20px; right: 25px;
+            color: #64748B; font-size: 32px; font-weight: bold;
+            cursor: pointer; transition: color 0.2s; line-height: 1;
+        }
+        .fechar-modal:hover { color: #FF6B00; }
+        .modal-box-info h2 { color: #FF6B00; margin-top: 0; margin-bottom: 20px; font-size: 24px; text-align: center; }
+        .modal-box-info h3 { color: #00E5FF; margin-top: 25px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; font-size: 18px; }
+        .caixa-alerta { background-color: rgba(255, 107, 0, 0.1); border-left: 4px solid #FF6B00; padding: 15px 20px; margin: 20px 0; border-radius: 0 8px 8px 0; line-height: 1.6; font-size: 15px; }
+        .modal-conteudo p, .modal-conteudo li { font-size: 15px; line-height: 1.6; }
+        .modal-conteudo ol { padding-left: 20px; }
+        .modal-conteudo li { margin-bottom: 10px; }
 
         /* =========================================
            9. SEÇÃO DE SEO E RODAPÉ
@@ -258,10 +298,46 @@
 
     <!-- MODAL DE META -->
     <div class="modal-overlay" id="modal-meta">
-        <div class="modal-content">
+        <div class="modal-content-meta">
             <h2>🎉 Meta Alcançada! 🏆</h2>
             <p>Incrível! Você acaba de bater a sua meta diária de estudos. Todo o esforço de hoje é a sua aprovação de amanhã. Continue firme!</p>
             <button class="btn btn-start" onclick="fecharModalMeta()">Continuar Focado</button>
+        </div>
+    </div>
+
+    <!-- MODAL COMO USAR -->
+    <div class="modal-overlay" id="modal-como-usar" onclick="fecharModalComoUsarFora(event)">
+        <div class="modal-box-info">
+            <span class="fechar-modal" onclick="fecharModalComoUsar()">&times;</span>
+            <h2>Como Usar o Timer do Concurseiro</h2>
+            
+            <div class="modal-conteudo">
+                <p>O ambiente em que você estuda impacta diretamente a sua aprovação, e é por isso que recomendamos fortemente o uso do <strong>Timer do Concurseiro</strong> por meio de um <strong>computador (desktop/notebook) ou tablet</strong>.</p>
+                
+                <div class="caixa-alerta">
+                    <strong>⚠️ Dica de Ouro:</strong> Evite ao máximo utilizar o celular para cronometrar seus estudos. O smartphone foi projetado para capturar sua atenção. Ao isolar o controle do seu tempo em uma tela maior e manter o celular em outro cômodo ou no modo avião, você blinda o seu foco e garante que as suas horas líquidas sejam de fato, horas de estudo real.
+                </div>
+
+                <h3>⏱️ Modo Temporizador (Contagem Regressiva)</h3>
+                <p>Ideal para aplicar a Técnica Pomodoro ou ciclos fechados de estudo com pausas programadas.</p>
+                <ol>
+                    <li><strong>Ajuste sua Meta Diária:</strong> No topo da tela, defina quantas horas líquidas você se compromete a estudar hoje.</li>
+                    <li><strong>Configure o Áudio:</strong> Escolha o som. Caso prefira o silêncio total, basta deixar desmarcado.</li>
+                    <li><strong>Defina o Tempo da Sessão:</strong> Escolha os blocos pré-definidos (25 ou 50 min) ou clique em "Ajustar".</li>
+                    <li><strong>Identifique o Conteúdo:</strong> No campo <em>"Qual matéria você vai estudar?"</em>, digite a disciplina ou tópico.</li>
+                    <li><strong>Inicie o Ciclo:</strong> Clique no botão <strong>Iniciar</strong>.</li>
+                </ol>
+
+                <h3>⏳ Modo Cronômetro (Estudo Livre)</h3>
+                <p>Perfeito para sessões abertas onde você quer medir o tempo total de leitura ou videoaula sem limite de parada.</p>
+                <ol>
+                    <li><strong>Ajuste sua Meta Diária (Opcional):</strong> Acompanhe a barra de progresso ser preenchida.</li>
+                    <li><strong>Configure o Áudio (Opcional):</strong> Selecione um som ou deixe sem marcação.</li>
+                    <li><strong>Identifique o Conteúdo:</strong> Preencha o campo <em>"Qual matéria você vai estudar?"</em>.</li>
+                    <li><strong>Inicie a Contagem:</strong> Clique no botão <strong>Iniciar</strong> assim que der o play na aula ou PDF.</li>
+                    <li><strong>Grave seu Progresso:</strong> Ao finalizar, clique obrigatoriamente no botão <strong>Salvar</strong>. É essa ação que envia o tempo registrado para o seu histórico!</li>
+                </ol>
+            </div>
         </div>
     </div>
 
@@ -270,6 +346,9 @@
         <div class="sidebar-item active" id="tab-temporizador" onclick="mudarAba('temporizador')">Temporizador</div>
         <div class="sidebar-item" id="tab-cronometro" onclick="mudarAba('cronometro')">Cronômetro</div>
         <div class="sidebar-item" id="tab-historico" onclick="mudarAba('historico')">Histórico</div>
+        
+        <!-- NOVO BOTÃO COMO USAR ADICIONADO AQUI -->
+        <div class="sidebar-item menu-laranja-vibrante" id="btn-como-usar" onclick="abrirModalComoUsar()">📖 Como Usar</div>
     </div>
 
     <!-- ÁREA PRINCIPAL -->
@@ -352,9 +431,7 @@
             </div>
         </div>
 
-        <!-- ========================================== -->
-        <!-- SEÇÃO DE CONTEÚDO (SEO PARA O GOOGLE)      -->
-        <!-- ========================================== -->
+        <!-- SEÇÃO DE CONTEÚDO (SEO PARA O GOOGLE) -->
         <section class="conteudo-seo">
             <h2>Por que usar um Timer para Concursos?</h2>
             <p>O <strong>Timer do Concurseiro</strong> foi criado para ajudar estudantes a manterem o foco total. Seja estudando para concursos públicos, ENEM ou OAB, o controle do tempo é fundamental para evitar a procrastinação e medir seu desempenho real.</p>
@@ -403,7 +480,6 @@
         let rodandoCrono = false;
         let horaInicioCrono = 0; 
 
-        // Áudio via MP3 local
         let tocadorAudio = null;
 
         const workerBlob = new Blob([`
@@ -433,7 +509,7 @@
                         document.getElementById('btn-play-temp').classList.replace('btn-pause', 'btn-start');
                         document.title = "✅ TEMPO ESGOTADO!";
                         
-                        tocarAlarmeFim(); // Som Mp3
+                        tocarAlarmeFim(); 
                         salvarSessao('Temporizador', tempoInicialTemp, document.getElementById('materia-temp').value);
                         
                         setTimeout(() => { aplicarAtalho(30, 'foco'); }, 2000);
@@ -463,21 +539,34 @@
             });
         });
 
-        // --- SISTEMA DE ÁUDIO MP3 ---
+        // --- FUNÇÕES DO NOVO MODAL "COMO USAR" ---
+        function abrirModalComoUsar() {
+            document.getElementById('modal-como-usar').classList.add('show');
+        }
+
+        function fecharModalComoUsar() {
+            document.getElementById('modal-como-usar').classList.remove('show');
+        }
+
+        function fecharModalComoUsarFora(event) {
+            if (event.target.id === 'modal-como-usar') {
+                fecharModalComoUsar();
+            }
+        }
+
         function testarSom() {
             localStorage.setItem('somAlarme', document.getElementById('som-alarme').value);
-            tocarAlarmeFim(true); // Toca por apenas 2 segundos para testar
+            tocarAlarmeFim(true); 
         }
 
         function tocarAlarmeFim(amostra = false) {
             if(tocadorAudio) { tocadorAudio.pause(); tocadorAudio.currentTime = 0; }
-            let somEscolhido = document.getElementById('som-alarme').value; // 'Suave', 'Loop', 'Alerta'
+            let somEscolhido = document.getElementById('som-alarme').value; 
             
-            // Busca os audios na pasta ./audio/
             tocadorAudio = new Audio(`./audio/${somEscolhido}.mp3`);
             tocadorAudio.play().catch(e => console.log("O navegador bloqueou o áudio. O usuário precisa interagir com a tela primeiro."));
 
-            let duracao = amostra ? 2000 : 6000; // 2s de teste, 6s reais ao fim do tempo
+            let duracao = amostra ? 2000 : 6000; 
             setTimeout(() => {
                 if(tocadorAudio) {
                     tocadorAudio.pause();
@@ -486,7 +575,6 @@
             }, duracao);
         }
 
-        // --- SISTEMA DE DATAS ---
         function obterDataHoraLocal() {
             let agora = new Date();
             let dia = String(agora.getDate()).padStart(2, '0');
@@ -504,7 +592,6 @@
             return `${dia}/${mes}/${ano}`;
         }
 
-        // --- STREAK (DIAS SEGUIDOS) ---
         function calcularStreak() {
             let historico = JSON.parse(localStorage.getItem('historicoEstudos')) || [];
             let metaAtual = parseInt(localStorage.getItem('metaUsuario')) || (4 * 3600);
@@ -521,10 +608,8 @@
             let dataHojeStr = formatarDataGenerica(dataCheck);
             let hojeBatido = (diasEstudados[dataHojeStr] >= metaAtual);
 
-            // Volta 1 dia no tempo
             dataCheck.setDate(dataCheck.getDate() - 1);
             
-            // Verifica o passado sucessivamente
             while (true) {
                 let strData = formatarDataGenerica(dataCheck);
                 if (diasEstudados[strData] >= metaAtual) {
@@ -532,7 +617,7 @@
                     dataCheck.setDate(dataCheck.getDate() - 1);
                 } else { break; }
             }
-            if (hojeBatido) { streak++; } // Soma hoje se bateu
+            if (hojeBatido) { streak++; } 
 
             document.getElementById('streak-display').innerHTML = `🔥 ${streak} dia${streak !== 1 ? 's' : ''} na meta`;
         }
@@ -680,7 +765,7 @@
             let materiaFinal = materiaDigitada ? materiaDigitada : "Sem matéria";
             
             historico.push({
-                id: Date.now(), // Gerando um ID único
+                id: Date.now(), 
                 dataData: relogioPreciso.dataApenas, 
                 dataHora: relogioPreciso.dataCompleta, 
                 tipo: tipo, materia: materiaFinal,
@@ -711,14 +796,10 @@
             document.getElementById('total-liquido').innerText = `${totalH}h ${totalM}m`;
 
             let metaHoras = Math.floor(metaDiariaSegundos / 3600);
-            let textoHorasEstudadas = totalH + (totalM / 60); // Para usar nas decimais
-            
-            // Atualiza Texto da Meta
             let hEstudadaStr = totalH > 0 ? `${totalH}h` : "";
             let mEstudadaStr = totalM > 0 ? `${totalM}m` : (totalH === 0 ? "0h" : "");
             document.getElementById('texto-meta').innerHTML = `Meta: ${hEstudadaStr}${mEstudadaStr} de ${metaHoras}h ✏️`;
 
-            // Calcula % da Barra
             let porcentagem = (segundosHoje / metaDiariaSegundos) * 100;
             let porcRedonda = Math.floor(porcentagem);
             if (porcRedonda > 100) porcRedonda = 100; 
@@ -727,7 +808,6 @@
             barra.style.width = porcRedonda + "%";
             document.getElementById('meta-porcentagem').innerText = porcRedonda > 5 ? porcRedonda + "%" : "";
 
-            // Verifica comemoração de Meta
             if (porcRedonda === 100) {
                 let dataUltimaComemoracao = localStorage.getItem('comemorouMetaData');
                 if (dataUltimaComemoracao !== dataHoje) {
