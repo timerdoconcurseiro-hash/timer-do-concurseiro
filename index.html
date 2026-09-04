@@ -312,58 +312,61 @@
             flex-direction: column;
             gap: 25px;
             box-shadow: -2px 0 10px rgba(0,0,0,0.1);
-            transition: opacity 1.5s ease-in-out; /* Prepara a animação de sumir */
+            transition: opacity 1.5s ease-in-out;
         }
 
         /* Classe para sumir suavemente com a barra direita */
         .fade-out-sidebar {
             opacity: 0;
-            pointer-events: none; /* Impede clique na área invisível */
+            pointer-events: none; 
         }
 
-        .card-dica {
-            background-color: #1E293B;
-            border: 1px solid #334155;
-            border-radius: 12px;
-            padding: 25px;
+        /* O novo balão de Instalação com Seta Animada */
+        .instalar-cta {
+            background: linear-gradient(135deg, #FF6B00, #F59E0B); 
+            color: #0F172A;
+            border-radius: 16px;
+            padding: 25px 20px;
             text-align: center;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-            transition: transform 0.3s ease, border-color 0.3s ease;
-        }
-        
-        .card-dica:hover {
-            transform: translateY(-2px);
-            border-color: #00E5FF;
+            box-shadow: 0 8px 25px rgba(255, 107, 0, 0.4);
+            position: relative;
         }
 
-        .card-dica h3 {
-            color: #F59E0B;
-            font-size: 20px; 
-            margin-top: 0;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
+        .seta-animada {
+            font-size: 50px;
+            line-height: 1;
+            margin-top: -10px;
+            margin-bottom: 10px;
+            display: inline-block;
+            color: #0F172A;
+            animation: bounce-up 1.5s infinite ease-in-out; 
         }
 
-        .card-dica p {
-            color: #94A3B8;
-            font-size: 15px;
-            line-height: 1.6;
-            margin-bottom: 20px;
+        @keyframes bounce-up {
+            0%, 100% { transform: translateY(0) rotate(-20deg); }
+            50% { transform: translateY(-15px) rotate(-20deg); }
         }
 
-        .tutorial-media {
-            width: 100%;
-            border-radius: 8px;
-            border: 1px solid #475569;
-            background-color: #0B1120;
-            display: block;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.4); 
+        .instalar-cta h3 {
+            font-size: 22px;
+            margin: 0 0 10px 0;
+            font-weight: 900;
         }
 
-        /* Oculta a barra lateral direita em telas menores (tablets/celulares) */
+        .instalar-cta p {
+            font-size: 16px;
+            font-weight: 600;
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        /* Card de Branding (Logo) */
+        .card-branding {
+            display: flex; flex-direction: column; justify-content: center; align-items: center; 
+            padding: 40px 20px; border-radius: 12px; background: rgba(30, 41, 59, 0.5);
+            border: 1px solid #334155; text-align: center;
+        }
+
         @media (max-width: 1250px) {
             .right-sidebar { display: none; }
         }
@@ -531,26 +534,22 @@
     <!-- 3. SIDEBAR DIREITA (DICAS E FUTUROS ANÚNCIOS) -->
     <div class="right-sidebar">
         
-        <!-- Card 1: Favoritos -->
-        <div class="card-dica">
-            <h3>⭐ Acesse Mais Rápido</h3>
-            <p>Não perca o foco procurando o site. Arraste para a barra de <strong>Favoritos</strong> do seu navegador!</p>
-            
-            <video class="tutorial-media" autoplay loop muted playsinline>
-                <source src="tutorial-favoritos.mp4" type="video/mp4">
-                Seu navegador não suporta vídeos.
-            </video>
+        <!-- Dica de Instalação (Seta Animada) -->
+        <div class="instalar-cta">
+            <div class="seta-animada">⬆️</div>
+            <h3>Instale o Aplicativo!</h3>
+            <p>Clique no botão acima na barra do seu navegador para ter acesso direto na sua <strong>Área de Trabalho</strong>.</p>
         </div>
 
-        <!-- Card 2: Atalho no Google -->
-        <div class="card-dica">
-            <h3>🔗 Atalho no Google</h3>
-            <p>Adicione o Timer à página inicial do seu navegador para acessá-lo com apenas 1 clique sempre que for estudar!</p>
-            
-            <video class="tutorial-media" autoplay loop muted playsinline>
-                <source src="tutorial-2.mp4" type="video/mp4">
-                Seu navegador não suporta vídeos.
-            </video>
+        <!-- Card 2: Branding (Logo e Lema) -->
+        <div class="card-branding">
+            <div class="logo" style="font-size: 24px; margin-bottom: 15px; color: #00E5FF;">
+                Timer do Concurseiro.
+            </div>
+            <p style="font-size: 15px; color: #94A3B8; margin: 0; font-style: italic; line-height: 1.6;">
+                O seu ambiente blindado contra distrações.<br>
+                Feito para a sua aprovação.
+            </p>
         </div>
 
     </div>
