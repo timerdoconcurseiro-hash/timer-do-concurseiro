@@ -2,6 +2,11 @@
 <html lang="pt-br">
 <head>
     <link rel="icon" type="image/png" href="favicon.png">
+    
+    <!-- Link para o Manifest (PWA - Para transformar em App) -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0F172A">
+    
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-Y9BH2YB009"></script>
     <script>
@@ -32,7 +37,7 @@
             color: #F8FAFC;
             min-height: 100vh;
             display: flex;
-            flex-direction: row; /* Alinha as 3 colunas lado a lado */
+            flex-direction: row; 
             transition: background-color 0.8s ease;
         }
 
@@ -297,26 +302,30 @@
         /* =========================================
            10. BARRA LATERAL DIREITA (WIDGETS/ANÚNCIOS)
            ========================================= */
-        /* =========================================
-           10. BARRA LATERAL DIREITA (WIDGETS/ANÚNCIOS)
-           ========================================= */
         .right-sidebar {
-            width: 450px; /* Aumentamos de 350px para 450px */
+            width: 450px; 
             min-width: 450px;
             background-color: #0F172A;
             border-left: 1px solid #334155;
-            padding: 30px 25px; /* Mais espaço de respiro lateral */
+            padding: 30px 25px; 
             display: flex;
             flex-direction: column;
             gap: 25px;
             box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+            transition: opacity 1.5s ease-in-out; /* Prepara a animação de sumir */
+        }
+
+        /* Classe para sumir suavemente com a barra direita */
+        .fade-out-sidebar {
+            opacity: 0;
+            pointer-events: none; /* Impede clique na área invisível */
         }
 
         .card-dica {
             background-color: #1E293B;
             border: 1px solid #334155;
             border-radius: 12px;
-            padding: 25px; /* Mais espaço interno para o conteúdo respirar */
+            padding: 25px;
             text-align: center;
             box-shadow: 0 4px 10px rgba(0,0,0,0.2);
             transition: transform 0.3s ease, border-color 0.3s ease;
@@ -329,7 +338,7 @@
 
         .card-dica h3 {
             color: #F59E0B;
-            font-size: 20px; /* Título bem maior e chamativo */
+            font-size: 20px; 
             margin-top: 0;
             margin-bottom: 15px;
             display: flex;
@@ -340,7 +349,7 @@
 
         .card-dica p {
             color: #94A3B8;
-            font-size: 15px; /* Texto maior */
+            font-size: 15px;
             line-height: 1.6;
             margin-bottom: 20px;
         }
@@ -351,10 +360,10 @@
             border: 1px solid #475569;
             background-color: #0B1120;
             display: block;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.4); /* Sombra mais forte para destacar o vídeo */
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4); 
         }
 
-        /* Responsividade: Oculta a barra lateral direita em telas menores (tablets/celulares) */
+        /* Oculta a barra lateral direita em telas menores (tablets/celulares) */
         @media (max-width: 1250px) {
             .right-sidebar { display: none; }
         }
@@ -519,7 +528,7 @@
         </footer>
     </div>
 
-   <!-- 3. SIDEBAR DIREITA (DICAS E FUTUROS ANÚNCIOS) -->
+    <!-- 3. SIDEBAR DIREITA (DICAS E FUTUROS ANÚNCIOS) -->
     <div class="right-sidebar">
         
         <!-- Card 1: Favoritos -->
@@ -533,13 +542,12 @@
             </video>
         </div>
 
-        <!-- Card 2: Novo Tutorial -->
+        <!-- Card 2: Atalho no Google -->
         <div class="card-dica">
-            <h3>📱 Instale como App (Atalho)</h3>
-            <p>Você sabia que pode adicionar o Timer à sua <strong>Tela Inicial</strong> do celular ou PC? Acesse com apenas 1 clique!</p>
+            <h3>🔗 Atalho no Google</h3>
+            <p>Adicione o Timer à página inicial do seu navegador para acessá-lo com apenas 1 clique sempre que for estudar!</p>
             
             <video class="tutorial-media" autoplay loop muted playsinline>
-                <!-- Salve o segundo vídeo com o nome 'tutorial-2.mp4' na mesma pasta -->
                 <source src="tutorial-2.mp4" type="video/mp4">
                 Seu navegador não suporta vídeos.
             </video>
@@ -618,6 +626,14 @@
         window.onload = function() { 
             atualizarPainelEProgresso();
             calcularStreak();
+            
+            // Ocultar a barra lateral direita suavemente após 25 segundos
+            setTimeout(function() {
+                let rightSidebar = document.querySelector('.right-sidebar');
+                if (rightSidebar) {
+                    rightSidebar.classList.add('fade-out-sidebar');
+                }
+            }, 25000);
         };
 
         window.addEventListener('beforeunload', function (e) {
@@ -630,6 +646,13 @@
                 localStorage.setItem("cookiesAceitos", "true");
                 document.getElementById("cookie-banner").style.display = "none";
             });
+            
+            // Registrando o Service Worker para PWA (Pop-up de instalação)
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('sw.js')
+                .then(reg => console.log('Service Worker registrado!', reg))
+                .catch(err => console.error('Erro ao registrar Service Worker', err));
+            }
         });
 
         // --- FUNÇÕES DO NOVO MODAL "COMO USAR" ---
@@ -685,12 +708,11 @@
             return `${dia}/${mes}/${ano}`;
         }
 
-        // --- CÁLCULO DE STREAK (ATUALIZADO: OPÇÃO 1 - DIAS ACUMULADOS) ---
+        // --- CÁLCULO DE STREAK (OPÇÃO 1 - DIAS ACUMULADOS) ---
         function calcularStreak() {
             let historico = JSON.parse(localStorage.getItem('historicoEstudos')) || [];
             let metaAtual = parseInt(localStorage.getItem('metaUsuario')) || (4 * 3600);
             
-            // 1. Soma o tempo estudado por dia
             let diasEstudados = {};
             historico.forEach(sessao => {
                 if (!sessao.materia.toLowerCase().includes("pausa")) {
@@ -698,7 +720,6 @@
                 }
             });
 
-            // 2. Conta TODOS os dias vitoriosos (acumulativo)
             let totalDiasVitoriosos = 0;
             for (let data in diasEstudados) {
                 if (diasEstudados[data] >= metaAtual) {
@@ -706,7 +727,6 @@
                 }
             }
 
-            // 3. Atualiza a badge no topo
             document.getElementById('streak-display').innerHTML = `🔥 ${totalDiasVitoriosos} dia${totalDiasVitoriosos !== 1 ? 's' : ''} na meta`;
         }
 
