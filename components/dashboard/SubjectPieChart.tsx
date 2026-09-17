@@ -37,14 +37,14 @@ export function SubjectPieChart({ data }: { data?: { name: string; value: number
           dataKey="value"
           stroke="transparent"
         >
-          {MOCK_DATA.map((entry, index) => (
+          {chartData.map((entry, index) => (
             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
           ))}
         </Pie>
         <Tooltip
           contentStyle={{ backgroundColor: "#1E293B", borderColor: "#334155", borderRadius: "8px", color: "#F8FAFC" }}
           itemStyle={{ color: "#F8FAFC" }}
-          formatter={(value: number) => [`${value}h líquidas`, "Tempo"]}
+          formatter={(value: any) => [`${value}h líquidas`, "Tempo"]}
         />
         <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: "12px", paddingTop: "20px" }} />
       </PieChart>
