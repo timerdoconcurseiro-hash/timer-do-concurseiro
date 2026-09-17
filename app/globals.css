@@ -1,0 +1,69 @@
+@import "tailwindcss";
+
+:root {
+  /* Identidade visual — docs/identidade-visual.md — dark-first, tema padrão */
+  color-scheme: dark;
+  --app-bg: #0f172a;
+  --app-surface: #1e293b;
+  --app-border: #334155;
+  --accent: #38bdf8;
+  --accent-strong: #0ea5e9;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --action-start: #f97316;
+  --action-end: #ef4444;
+  --success: #22c55e;
+  --danger: #dc2626;
+}
+
+/* Tema claro via preferência do sistema (só quando o usuário não escolheu
+   explicitamente "escuro" pelo seletor) — docs/identidade-visual.md §2.1 */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    color-scheme: light;
+    --app-bg: #f8fafc;
+    --app-surface: #ffffff;
+    --app-border: #e2e8f0;
+    --accent: #0ea5e9;
+    --accent-strong: #0284c7;
+    --text-primary: #0f172a;
+    --text-secondary: #64748b;
+    --success: #16a34a;
+  }
+}
+
+/* Tema claro explícito (seletor) — vence a preferência do sistema */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --app-bg: #f8fafc;
+  --app-surface: #ffffff;
+  --app-border: #e2e8f0;
+  --accent: #0ea5e9;
+  --accent-strong: #0284c7;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --success: #16a34a;
+}
+
+@theme inline {
+  --color-app-bg: var(--app-bg);
+  --color-app-surface: var(--app-surface);
+  --color-app-border: var(--app-border);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-action-start: var(--action-start);
+  --color-action-end: var(--action-end);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+
+  --font-display: var(--font-space-grotesk);
+  --font-sans: var(--font-inter);
+}
+
+body {
+  background: var(--app-bg);
+  color: var(--text-primary);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
