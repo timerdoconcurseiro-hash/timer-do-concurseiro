@@ -93,7 +93,7 @@ export default async function VIPPage() {
                   <Target size={16} className="text-emerald-400" /> Edital Verticalizado Inteligente
                 </h3>
               </div>
-              <EditalVerticalizado initialData={editalData} />
+              <EditalVerticalizado initialData={editalData || []} />
             </section>
 
             <section className="bg-slate-900/40 border border-slate-800/60 rounded-[24px] p-7 backdrop-blur-sm transition-all hover:border-amber-500/20">
