@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
@@ -29,6 +29,13 @@ export default function TermosUsoPage() {
 
           <h3 className="text-white font-semibold text-lg mt-6">6. Modificações</h3>
           <p>O Timer do Concurseiro pode revisar e alterar estes termos de serviço a qualquer momento, sem aviso prévio. Ao continuar usando o site após tais alterações, você concorda em ficar vinculado à versão atual desses termos de serviço.</p>
+
+          <h3 className="text-white font-semibold text-lg mt-6">7. Planos, Assinaturas e Acesso Vitalício</h3>
+          <p>
+            Os planos de assinatura (Mensal e Anual) são renovados automaticamente de acordo com seu ciclo de faturamento. O cancelamento interrompe cobranças futuras, mas não reembolsa valores de meses já iniciados (exceto no prazo da garantia de 7 dias).
+            <br/><br/>
+            O termo <strong>"Acesso Vitalício" (Lifetime)</strong> refere-se ao tempo de vida útil do produto. Isso garante ao comprador acesso contínuo à plataforma sem novas mensalidades enquanto o software "Timer do Concurseiro" estiver ativo, mantido e sendo comercializado pela empresa. A empresa reserva-se o direito de descontinuar ou alterar drasticamente o serviço, seus servidores e suas integrações com Inteligências Artificiais de terceiros a qualquer momento no futuro em caso de inviabilidade comercial ou mudança de modelo de negócios, não constituindo obrigação de prestação de serviços ad aeternum (pela eternidade) ao usuário.
+          </p>
         </div>
       </div>
     </div>
