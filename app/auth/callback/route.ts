@@ -28,8 +28,9 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     
     if (!error) {
-      // Sucesso! Redireciona para o Dashboard Premium
-      return NextResponse.redirect(`${origin}/dashboard`)
+      // Sucesso! Redireciona para a Área VIP por padrão. 
+      // Se o usuário não for premium, a própria página VIP o devolve pro Dashboard.
+      return NextResponse.redirect(`${origin}/vip`)
     }
   }
 
