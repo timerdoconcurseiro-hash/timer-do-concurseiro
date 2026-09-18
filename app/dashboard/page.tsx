@@ -4,6 +4,7 @@ import { SubjectPieChart } from "@/components/dashboard/SubjectPieChart";
 import { ConsistencyHeatmap } from "@/components/dashboard/ConsistencyHeatmap";
 import { PremiumObserver } from "@/components/dashboard/PremiumObserver";
 import { VerifyPaymentButton } from "@/components/dashboard/VerifyPaymentButton";
+import { FocusWrapper } from "@/components/dashboard/FocusWrapper";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -102,8 +103,8 @@ export default async function DashboardPage() {
                       <Target size={20} />
                     </div>
                     <div>
-                      <h4 className="font-semibold text-slate-200">Projeção Dinâmica de Edital</h4>
-                      <p className="text-xs text-slate-400 mt-1">Calcule automaticamente o ritmo necessário (horas/dia) para bater sua meta até a prova.</p>
+                      <h4 className="font-semibold text-slate-200">Edital Mágico Inteligente (I.A.)</h4>
+                      <p className="text-xs text-slate-400 mt-1">Envie o PDF do seu edital. Nossa I.A extrai os tópicos, gera metas diárias de estudo e monta a sua lista de prioridades.</p>
                     </div>
                   </div>
 
@@ -112,8 +113,8 @@ export default async function DashboardPage() {
                       <BrainCircuit size={20} />
                     </div>
                     <div>
-                      <h4 className="font-semibold text-slate-200">Ciclo Inteligente (IA)</h4>
-                      <p className="text-xs text-slate-400 mt-1">O algoritmo sugere automaticamente o que você deve revisar com base no peso e histórico.</p>
+                      <h4 className="font-semibold text-slate-200">Sala de Leitura + Smart Cycle</h4>
+                      <p className="text-xs text-slate-400 mt-1">Cole seus resumos para a I.A gerar Flashcards automáticos integrados a um algoritmo de Repetição Espaçada.</p>
                     </div>
                   </div>
 
@@ -122,8 +123,8 @@ export default async function DashboardPage() {
                       <Headphones size={20} />
                     </div>
                     <div>
-                      <h4 className="font-semibold text-slate-200">Foco Profundo (Áudios)</h4>
-                      <p className="text-xs text-slate-400 mt-1">Biblioteca com geradores binaurais (Web Audio) para aumentar exponencialmente a concentração.</p>
+                      <h4 className="font-semibold text-slate-200">Sintetizador Binaural Focus</h4>
+                      <p className="text-xs text-slate-400 mt-1">Biblioteca geradora de ondas Theta, Delta e Ruído Verde (Web Audio) para te colocar em fluxo instantâneo.</p>
                     </div>
                   </div>
                 </div>
@@ -135,27 +136,17 @@ export default async function DashboardPage() {
         {/* Dashboard Grid - Free Features */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           
-          <section className="bg-slate-900/40 border border-slate-800/60 rounded-[24px] p-7 backdrop-blur-sm transition-all hover:border-slate-700/80">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-sm font-medium text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                <BarChart3 size={16} className="text-cyan-400" /> Alocação de Tempo
-              </h3>
-            </div>
+          <FocusWrapper title={<><BarChart3 size={16} className="text-cyan-400" /> Alocação de Tempo</>}>
             <div className="h-[250px] w-full">
               <SubjectPieChart data={chartData} />
             </div>
-          </section>
+          </FocusWrapper>
 
-          <section className="bg-slate-900/40 border border-slate-800/60 rounded-[24px] p-7 backdrop-blur-sm transition-all hover:border-slate-700/80">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-sm font-medium text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                <Calendar size={16} className="text-indigo-400" /> Mapa de Consistência
-              </h3>
-            </div>
+          <FocusWrapper title={<><Calendar size={16} className="text-indigo-400" /> Mapa de Consistência</>}>
             <div className="w-full overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-slate-800 flex items-center justify-center h-[250px]">
               <ConsistencyHeatmap />
             </div>
-          </section>
+          </FocusWrapper>
           
         </div>
       </div>
