@@ -35,9 +35,7 @@ export default function Home() {
         Começar a estudar
       </Link>
 
-      <p className="text-xs text-text-secondary">
-        Fase 1 — timer, meta diária, streak e histórico funcionando
-      </p>
+
     </main>
   );
 }
