@@ -17,12 +17,21 @@ export async function POST(request: Request) {
 
     if (event === 'PAYMENT_RECEIVED' || event === 'PAYMENT_CONFIRMED') {
       
-      // O Asaas possui um campo "externalReference" ou podemos buscar o email pelo ID do cliente no Asaas.
-      // Supondo que no link de pagamento do Asaas, o "email" seja exigido e venha atrelado ao cliente.
-      // (Em produção, o ideal é passar o ID do usuário (Supabase) no "externalReference" do Asaas).
-      const customerEmail = payment.customerEmail || body.customer?.email || "email-do-cliente-no-asaas@gmail.com"; 
+      // Log massivo para depuração: ver o que o Asaas realmente mandou
+      console.log("[Webhook Asaas Payload Completo]:", JSON.stringify(body, null, 2));
 
-      console.log(`[Webhook Asaas] Pagamento confirmado para o email: ${customerEmail}`);
+      // Tenta extrair o email de vários lugares possíveis do payload do Asaas
+      const customerEmail = payment.customerEmail 
+                         || payment.email 
+                         || body.customer?.email 
+                         || payment.customer?.email;
+
+      if (!customerEmail || typeof customerEmail !== 'string' || customerEmail === "email-do-cliente-no-asaas@gmail.com") {
+        console.error('[Erro Asaas Webhook] O Asaas não enviou o email do cliente no payload!', payment);
+        return NextResponse.json({ error: 'Email missing from Asaas payload' }, { status: 400 });
+      }
+
+      console.log(`[Webhook Asaas] Pagamento confirmado para o email extraído: ${customerEmail}`);
 
       // 1. Procurar o usuário pelo email na nossa tabela 'profiles'
       const { data: profile, error: searchError } = await supabaseAdmin
