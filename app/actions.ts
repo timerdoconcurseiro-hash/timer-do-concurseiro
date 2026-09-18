@@ -322,3 +322,25 @@ export async function deleteEditalVerticalizado() {
   if (error) return { success: false, error: error.message };
   return { success: true };
 }
+
+export async function saveAIFlashcards(flashcards: { question: string; answer: string }[], subject: string) {
+  const supabase = await createClient();
+  const { data: authData } = await supabase.auth.getUser();
+  if (!authData.user) return { success: false, error: "Não autenticado" };
+
+  const today = new Date().toISOString().split('T')[0];
+
+  const cardsToInsert = flashcards.map(card => ({
+    user_id: authData.user.id,
+    subject: subject || "Revisão Geral",
+    topic: card.question,
+    notes: card.answer,
+    status: 'pending',
+    review_date: today
+  }));
+
+  const { error } = await supabase.from('spaced_reviews').insert(cardsToInsert);
+
+  if (error) return { success: false, error: error.message };
+  return { success: true };
+}

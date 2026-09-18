@@ -4,6 +4,8 @@ import { SmartCycle } from "@/components/dashboard/SmartCycle";
 import { EditalVerticalizado } from "@/components/dashboard/EditalVerticalizado";
 import { AmbientSounds } from "@/components/dashboard/AmbientSounds";
 import { FocusWrapper } from "@/components/dashboard/FocusWrapper";
+import { AIStudyRoom } from "@/components/dashboard/AIStudyRoom";
+import { DailyMissions } from "@/components/dashboard/DailyMissions";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -84,11 +86,20 @@ export default async function VIPPage() {
             <FocusWrapper title={<><Headphones size={16} className="text-amber-400" /> Sintetizador Binaural Focus</>}>
               <AmbientSounds />
             </FocusWrapper>
+
+            <FocusWrapper title={<><BrainCircuit size={16} className="text-blue-400" /> Sala de Leitura IA (Gerador de Resumos e Flashcards)</>}>
+              <AIStudyRoom />
+            </FocusWrapper>
             
           </div>
 
           {/* Right Column - Sidebars */}
           <div className="lg:col-span-4 space-y-6">
+            
+            <FocusWrapper title={<><Sparkles size={16} className="text-amber-400" /> Missões de Hoje (Cronograma)</>}>
+              <DailyMissions initialData={editalData || []} />
+            </FocusWrapper>
+
             <FocusWrapper title={<><BrainCircuit size={16} className="text-fuchsia-400" /> Smart Cycle (Revisão Espaçada)</>}>
               <SmartCycle reviews={todayReviews} />
             </FocusWrapper>
