@@ -6,9 +6,9 @@ import { BrainCircuit, Wind, Cloud, Waves, Volume2 } from "lucide-react";
 const SOUNDS = [
   { id: 'binaural_focus', name: 'Foco (Gamma 40Hz)', icon: BrainCircuit, type: 'binaural', base: 400, diff: 40 },
   { id: 'binaural_relax', name: 'Leitura (Alpha 10Hz)', icon: BrainCircuit, type: 'binaural', base: 300, diff: 10 },
-  { id: 'white_noise', name: 'Ruído Branco', icon: Wind, type: 'noise', color: 'white' },
-  { id: 'brown_noise', name: 'Ruído Marrom', icon: Cloud, type: 'noise', color: 'brown' },
-  { id: 'pink_noise', name: 'Ruído Rosa', icon: Waves, type: 'noise', color: 'pink' },
+  { id: 'binaural_flow', name: 'Fluxo (Theta 4Hz)', icon: Waves, type: 'binaural', base: 250, diff: 4 },
+  { id: 'binaural_deep', name: 'Zenn (Delta 2Hz)', icon: Cloud, type: 'binaural', base: 200, diff: 2 },
+  { id: 'green_noise', name: 'Ruído Verde (Água)', icon: Wind, type: 'noise', color: 'green' },
 ];
 
 export function AmbientSounds() {
@@ -38,7 +38,7 @@ export function AmbientSounds() {
     const ctx = new AudioContextClass();
     ctxRef.current = ctx;
     const gain = ctx.createGain();
-    // Ruídos e binaurais gerados programaticamente precisam ter ganho bem reduzido
+    // Ajuste de volume base mais suave
     gain.gain.value = (volume / 100) * 0.1;
     gain.connect(ctx.destination);
     gainRef.current = gain;
@@ -52,15 +52,25 @@ export function AmbientSounds() {
     const merger = ctx.createChannelMerger(2);
     merger.connect(gain);
 
+    // Oscilador esquerdo
     const left = ctx.createOscillator();
     left.type = 'sine'; left.frequency.value = base;
     left.connect(merger, 0, 0); left.start();
 
+    // Oscilador direito
     const right = ctx.createOscillator();
     right.type = 'sine'; right.frequency.value = base + diff;
     right.connect(merger, 0, 1); right.start();
 
-    sourceNodesRef.current = [left, right, merger];
+    // Filtro Lowpass para suavizar as ondas binaurais tirando agudos agressivos
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 1000;
+    merger.disconnect();
+    merger.connect(filter);
+    filter.connect(gain);
+
+    sourceNodesRef.current = [left, right, merger, filter];
   };
 
   const playNoise = (color: string) => {
@@ -74,26 +84,27 @@ export function AmbientSounds() {
     let lastOut = 0;
     for (let i = 0; i < bufferSize; i++) {
       const white = Math.random() * 2 - 1;
-      if (color === 'white') {
-        output[i] = white;
-      } else if (color === 'brown') {
-        output[i] = (lastOut + (0.02 * white)) / 1.02;
-        lastOut = output[i];
-        output[i] *= 3.5; 
-      } else if (color === 'pink') {
-        // aproximação simples de pink noise
-        output[i] = (lastOut + (0.05 * white)) / 1.05;
-        lastOut = output[i];
-        output[i] *= 2.0;
-      }
+      // Ruído base
+      output[i] = (lastOut + (0.02 * white)) / 1.02;
+      lastOut = output[i];
+      output[i] *= 3.5; 
     }
 
     const noise = ctx.createBufferSource();
     noise.buffer = buffer;
     noise.loop = true;
-    noise.connect(gain);
+
+    // Filtro Passa-Faixa (Bandpass) em 500Hz para criar Ruído Verde (som de rio/cachoeira suave)
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = 400; // Frequência natural suave
+    filter.Q.value = 0.5; // Largura de banda larga
+    
+    noise.connect(filter);
+    filter.connect(gain);
     noise.start();
-    sourceNodesRef.current = [noise];
+    
+    sourceNodesRef.current = [noise, filter];
   };
 
   useEffect(() => {
