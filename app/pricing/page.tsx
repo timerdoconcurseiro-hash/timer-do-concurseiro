@@ -3,6 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { CheckCircle2, ShieldCheck, Zap, ArrowLeft } from "lucide-react";
+import { VerifyPaymentButton } from "@/components/dashboard/VerifyPaymentButton";
 
 export default function PricingPage() {
   return (
@@ -86,16 +87,21 @@ export default function PricingPage() {
         </div>
 
         {/* Garantia */}
-        <div className="max-w-2xl mx-auto mt-12 bg-slate-900/60 border border-slate-800 rounded-2xl p-6 flex items-start gap-4">
-          <div className="bg-emerald-500/10 p-3 rounded-full shrink-0">
+        <div className="max-w-2xl mx-auto mt-12 bg-slate-900/60 border border-slate-800 rounded-2xl p-6 flex flex-col md:flex-row items-center md:items-start gap-4">
+          <div className="bg-emerald-500/10 p-3 rounded-full shrink-0 mb-4 md:mb-0">
             <ShieldCheck size={32} className="text-emerald-400" />
           </div>
           <div>
-            <h4 className="text-lg font-bold text-white mb-1">Risco Zero: Garantia Incondicional de 7 Dias</h4>
-            <p className="text-sm text-slate-400 leading-relaxed">
+            <h4 className="text-lg font-bold text-white mb-1 text-center md:text-left">Risco Zero: Garantia Incondicional de 7 Dias</h4>
+            <p className="text-sm text-slate-400 leading-relaxed text-center md:text-left">
               Use a Inteligência Artificial, os Sons Binaurais e a Projeção de Edital no seu estudo desta semana. Se você não sentir que seu foco e controle dobraram em 7 dias, mande um único e-mail e nós devolveremos 100% do valor na hora, sem perguntas.
             </p>
           </div>
+        </div>
+
+        {/* Verificação de Pagamento */}
+        <div className="mt-8 flex justify-center">
+          <VerifyPaymentButton />
         </div>
 
       </div>

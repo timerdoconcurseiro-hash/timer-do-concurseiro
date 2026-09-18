@@ -5,6 +5,8 @@ import { ConsistencyHeatmap } from "@/components/dashboard/ConsistencyHeatmap";
 import { SmartCycle } from "@/components/dashboard/SmartCycle";
 import { EditalProjection } from "@/components/dashboard/EditalProjection";
 import { AmbientSounds } from "@/components/dashboard/AmbientSounds";
+import { PremiumObserver } from "@/components/dashboard/PremiumObserver";
+import { VerifyPaymentButton } from "@/components/dashboard/VerifyPaymentButton";
 import Link from "next/link";
 
 import { getUserProfile, getSubjectAnalytics } from "@/app/actions";
@@ -17,6 +19,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-[#090C15] text-slate-200 p-4 md:p-8 font-sans selection:bg-indigo-500/30">
+      {profile?.id && <PremiumObserver userId={profile.id} currentPlan={profile.plan || 'free'} />}
       <div className="max-w-7xl mx-auto space-y-8">
         
         {/* Header - Minimalist */}
@@ -67,6 +70,9 @@ export default async function DashboardPage() {
                     <p className="text-xs text-slate-500 text-center md:text-left mt-3">
                       Por menos do valor de um lanche por mês.
                     </p>
+                    <div className="flex justify-center md:justify-start">
+                      <VerifyPaymentButton />
+                    </div>
                   </div>
                 </div>
 
