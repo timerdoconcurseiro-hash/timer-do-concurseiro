@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
@@ -17,7 +17,7 @@ export default function PoliticaPrivacidadePage() {
           <p>Para fornecer a melhor experiência, o Timer do Concurseiro oferece funcionalidades locais e em nuvem:</p>
           <ul className="list-disc pl-5">
             <li><strong>Usuários não cadastrados:</strong> O aplicativo funciona de forma anônima e os dados de tempo de estudo ficam armazenados exclusivamente no seu próprio dispositivo (cache/localStorage). Não coletamos seus dados pessoais.</li>
-            <li><strong>Usuários cadastrados (Contas/Premium):</strong> Ao fazer login via Google OAuth, coletamos seu endereço de e-mail e nome público estritamente para a criação da sua conta e sincronização dos seus históricos de estudo em nosso banco de dados seguro na nuvem (Supabase).</li>
+            <li><strong>Usuários cadastrados (Contas/Premium):</strong> Ao fazer login, coletamos seu endereço de e-mail e nome público estritamente para a criação da sua conta e sincronização dos seus históricos de estudo em nosso banco de dados seguro na nuvem.</li>
           </ul>
 
           <h3 className="text-white font-semibold text-lg mt-6">2. Pagamentos e Assinaturas</h3>
