@@ -40,7 +40,9 @@ export default function PricingPage() {
             </ul>
 
             <a 
-              href="#" // TODO: Colocar o link de pagamento do Asaas aqui
+              href="https://www.asaas.com/c/rl7enqcioxuv7lax"
+              target="_blank"
+              rel="noopener noreferrer"
               className="mt-8 w-full bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 px-6 py-4 rounded-xl font-bold transition-all text-center"
             >
               Assinar Anual
@@ -72,7 +74,9 @@ export default function PricingPage() {
             </ul>
 
             <a 
-              href="#" // TODO: Colocar o link de pagamento do Asaas aqui
+              href="https://www.asaas.com/c/y8o2lixxmjz22dsr"
+              target="_blank"
+              rel="noopener noreferrer"
               className="mt-8 w-full bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-4 rounded-xl font-bold transition-all transform hover:scale-105 shadow-[0_0_20px_rgba(79,70,229,0.3)] text-center text-lg"
             >
               Garantir Vitalício
