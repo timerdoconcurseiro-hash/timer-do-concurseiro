@@ -1,135 +1,124 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { Headphones, CloudRain, Wind, Coffee, Volume2, BrainCircuit } from "lucide-react";
+import { BrainCircuit, Wind, Cloud, Waves, Volume2 } from "lucide-react";
 
 const SOUNDS = [
-  { id: 'binaural_focus', name: 'Foco (Gamma 40Hz)', icon: BrainCircuit, type: 'binaural', baseFreq: 400, diffFreq: 40 },
-  { id: 'binaural_relax', name: 'Leitura (Alpha 10Hz)', icon: BrainCircuit, type: 'binaural', baseFreq: 300, diffFreq: 10 },
-  { id: 'rain', name: 'Chuva Suave', icon: CloudRain, type: 'url', url: 'https://cdn.pixabay.com/download/audio/2021/08/04/audio_0625c1539c.mp3' },
-  { id: 'cafe', name: 'Café Parisiense', icon: Coffee, type: 'url', url: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3' },
-  { id: 'whitenoise', name: 'Ruído Branco', icon: Wind, type: 'url', url: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3' },
+  { id: 'binaural_focus', name: 'Foco (Gamma 40Hz)', icon: BrainCircuit, type: 'binaural', base: 400, diff: 40 },
+  { id: 'binaural_relax', name: 'Leitura (Alpha 10Hz)', icon: BrainCircuit, type: 'binaural', base: 300, diff: 10 },
+  { id: 'white_noise', name: 'Ruído Branco', icon: Wind, type: 'noise', color: 'white' },
+  { id: 'brown_noise', name: 'Ruído Marrom', icon: Cloud, type: 'noise', color: 'brown' },
+  { id: 'pink_noise', name: 'Ruído Rosa', icon: Waves, type: 'noise', color: 'pink' },
 ];
 
 export function AmbientSounds() {
   const [activeSound, setActiveSound] = useState<string | null>(null);
   const [volume, setVolume] = useState(50);
   
-  // Player de Áudio normal (MP3)
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  
-  // Sintetizador Binaural (Web Audio API)
-  const audioCtxRef = useRef<AudioContext | null>(null);
-  const oscLeftRef = useRef<OscillatorNode | null>(null);
-  const oscRightRef = useRef<OscillatorNode | null>(null);
-  const gainNodeRef = useRef<GainNode | null>(null);
+  const ctxRef = useRef<AudioContext | null>(null);
+  const gainRef = useRef<GainNode | null>(null);
+  const sourceNodesRef = useRef<AudioNode[]>([]);
 
-  useEffect(() => {
-    if (!audioRef.current) {
-      audioRef.current = new Audio();
-      audioRef.current.loop = true;
-    }
-
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-      stopBinaural();
-    };
-  }, []);
-
-  const stopBinaural = () => {
-    if (oscLeftRef.current) {
-      try { oscLeftRef.current.stop(); } catch(e){}
-      oscLeftRef.current.disconnect();
-      oscLeftRef.current = null;
-    }
-    if (oscRightRef.current) {
-      try { oscRightRef.current.stop(); } catch(e){}
-      oscRightRef.current.disconnect();
-      oscRightRef.current = null;
-    }
-    if (audioCtxRef.current) {
-      audioCtxRef.current.close();
-      audioCtxRef.current = null;
+  const stopAll = () => {
+    sourceNodesRef.current.forEach(node => {
+      try { (node as any).stop(); } catch(e){}
+      node.disconnect();
+    });
+    sourceNodesRef.current = [];
+    if (ctxRef.current) {
+      ctxRef.current.close();
+      ctxRef.current = null;
     }
   };
 
-  const playBinaural = (baseFreq: number, diffFreq: number) => {
-    stopBinaural(); // Limpa estado anterior
-    
+  const initAudio = () => {
+    stopAll();
     const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-    if (!AudioContextClass) return;
-
+    if (!AudioContextClass) return null;
     const ctx = new AudioContextClass();
-    audioCtxRef.current = ctx;
+    ctxRef.current = ctx;
+    const gain = ctx.createGain();
+    // Ruídos e binaurais gerados programaticamente precisam ter ganho bem reduzido
+    gain.gain.value = (volume / 100) * 0.1;
+    gain.connect(ctx.destination);
+    gainRef.current = gain;
+    return { ctx, gain };
+  };
 
+  const playBinaural = (base: number, diff: number) => {
+    const audio = initAudio();
+    if (!audio) return;
+    const { ctx, gain } = audio;
     const merger = ctx.createChannelMerger(2);
-    const gainNode = ctx.createGain();
-    gainNodeRef.current = gainNode;
-    
-    // Configura o volume inicial do sintetizador (Binaural costuma ser alto, usamos 10% da escala)
-    gainNode.gain.value = (volume / 100) * 0.1;
+    merger.connect(gain);
 
-    merger.connect(gainNode);
-    gainNode.connect(ctx.destination);
+    const left = ctx.createOscillator();
+    left.type = 'sine'; left.frequency.value = base;
+    left.connect(merger, 0, 0); left.start();
 
-    // Oscilador Esquerdo
-    const oscLeft = ctx.createOscillator();
-    oscLeft.type = 'sine';
-    oscLeft.frequency.value = baseFreq;
-    oscLeft.connect(merger, 0, 0); // Conecta no canal 0 (Esquerdo)
-    oscLeft.start();
-    oscLeftRef.current = oscLeft;
+    const right = ctx.createOscillator();
+    right.type = 'sine'; right.frequency.value = base + diff;
+    right.connect(merger, 0, 1); right.start();
 
-    // Oscilador Direito
-    const oscRight = ctx.createOscillator();
-    oscRight.type = 'sine';
-    oscRight.frequency.value = baseFreq + diffFreq;
-    oscRight.connect(merger, 0, 1); // Conecta no canal 1 (Direito)
-    oscRight.start();
-    oscRightRef.current = oscRight;
+    sourceNodesRef.current = [left, right, merger];
+  };
+
+  const playNoise = (color: string) => {
+    const audio = initAudio();
+    if (!audio) return;
+    const { ctx, gain } = audio;
+    const bufferSize = ctx.sampleRate * 2; 
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const output = buffer.getChannelData(0);
+
+    let lastOut = 0;
+    for (let i = 0; i < bufferSize; i++) {
+      const white = Math.random() * 2 - 1;
+      if (color === 'white') {
+        output[i] = white;
+      } else if (color === 'brown') {
+        output[i] = (lastOut + (0.02 * white)) / 1.02;
+        lastOut = output[i];
+        output[i] *= 3.5; 
+      } else if (color === 'pink') {
+        // aproximação simples de pink noise
+        output[i] = (lastOut + (0.05 * white)) / 1.05;
+        lastOut = output[i];
+        output[i] *= 2.0;
+      }
+    }
+
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+    noise.loop = true;
+    noise.connect(gain);
+    noise.start();
+    sourceNodesRef.current = [noise];
   };
 
   useEffect(() => {
-    // Parar todos
-    if (audioRef.current) audioRef.current.pause();
-    stopBinaural();
+    stopAll();
+    const soundData = SOUNDS.find(s => s.id === activeSound);
+    if (!soundData) return;
 
-    if (activeSound) {
-      const soundData = SOUNDS.find(s => s.id === activeSound);
-      if (soundData) {
-        if (soundData.type === 'url') {
-          if (audioRef.current && audioRef.current.src !== soundData.url) {
-            audioRef.current.src = soundData.url!;
-          }
-          if (audioRef.current) {
-            audioRef.current.volume = volume / 100;
-            audioRef.current.play().catch(e => console.log("Erro no autoplay:", e));
-          }
-        } else if (soundData.type === 'binaural') {
-          playBinaural(soundData.baseFreq!, soundData.diffFreq!);
-        }
-      }
+    if (soundData.type === 'binaural') {
+      playBinaural(soundData.base!, soundData.diff!);
+    } else if (soundData.type === 'noise') {
+      playNoise(soundData.color!);
     }
+    
+    return () => stopAll();
   }, [activeSound]);
 
   function handleVolumeChange(e: React.ChangeEvent<HTMLInputElement>) {
     const val = Number(e.target.value);
     setVolume(val);
-    
-    if (audioRef.current && activeSound && SOUNDS.find(s => s.id === activeSound)?.type === 'url') {
-      audioRef.current.volume = val / 100;
-    }
-    if (gainNodeRef.current && activeSound && SOUNDS.find(s => s.id === activeSound)?.type === 'binaural') {
-      gainNodeRef.current.gain.value = (val / 100) * 0.1;
-    }
+    if (gainRef.current) gainRef.current.gain.value = (val / 100) * 0.1;
   }
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
         {SOUNDS.map((sound) => {
           const Icon = sound.icon;
           const isActive = activeSound === sound.id;
@@ -151,14 +140,11 @@ export function AmbientSounds() {
       </div>
 
       {activeSound && (
-        <div className="bg-slate-900/60 p-3 rounded-lg flex items-center gap-3 border border-slate-800 animate-in fade-in slide-in-from-top-2">
+        <div className="bg-slate-900/60 p-3 rounded-lg flex items-center gap-3 border border-slate-800">
           <Volume2 size={16} className="text-slate-400 shrink-0" />
           <input 
             type="range" 
-            min="0"
-            max="100"
-            value={volume}
-            onChange={handleVolumeChange}
+            min="0" max="100" value={volume} onChange={handleVolumeChange}
             className="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-amber-500" 
           />
         </div>
