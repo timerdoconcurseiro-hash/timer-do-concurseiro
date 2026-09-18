@@ -308,3 +308,17 @@ export async function toggleTopicCompleted(topicId: string, completed: boolean) 
   if (error) return { success: false, error: error.message };
   return { success: true };
 }
+
+export async function deleteEditalVerticalizado() {
+  const supabase = await createClient();
+  const { data: authData } = await supabase.auth.getUser();
+  if (!authData.user) return { success: false, error: "Não autenticado" };
+
+  const { error } = await supabase
+    .from('edital_subjects')
+    .delete()
+    .eq('user_id', authData.user.id);
+
+  if (error) return { success: false, error: error.message };
+  return { success: true };
+}

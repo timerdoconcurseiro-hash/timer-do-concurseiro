@@ -1,18 +1,48 @@
 "use client";
 
-import React, { useState } from "react";
-import { CheckCircle, Circle, ChevronDown, ChevronUp, Loader2, Wand2, Target } from "lucide-react";
-import { saveGeneratedEdital, toggleTopicCompleted } from "@/app/actions";
+import React, { useState, useEffect } from "react";
+import { CheckCircle, Circle, ChevronDown, ChevronUp, Loader2, Wand2, Target, Trash2, Edit2, Check } from "lucide-react";
+import { saveGeneratedEdital, toggleTopicCompleted, deleteEditalVerticalizado } from "@/app/actions";
 import { useRouter } from "next/navigation";
 
 export function EditalVerticalizado({ initialData }: { initialData: any[] }) {
   const router = useRouter();
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [syllabusText, setSyllabusText] = useState("");
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [openSubjects, setOpenSubjects] = useState<Record<string, boolean>>({});
+  
+  // Nome do Concurso
+  const [examName, setExamName] = useState("Meu Concurso Alvo");
+  const [isEditingName, setIsEditingName] = useState(false);
 
   const hasEdital = initialData && initialData.length > 0;
+
+  useEffect(() => {
+    const savedName = localStorage.getItem("timer_exam_name");
+    if (savedName) setExamName(savedName);
+  }, []);
+
+  const saveExamName = () => {
+    localStorage.setItem("timer_exam_name", examName);
+    setIsEditingName(false);
+  };
+
+  const handleDelete = async () => {
+    if (!confirm("Tem certeza que deseja excluir todo o edital? Todo o progresso será perdido e você começará do zero.")) return;
+    
+    setIsDeleting(true);
+    try {
+      const res = await deleteEditalVerticalizado();
+      if (!res.success) throw new Error(res.error);
+      router.refresh();
+    } catch (err: any) {
+      alert("Erro ao excluir: " + err.message);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   // Converte arquivo para base64
   const fileToBase64 = (file: File): Promise<string> => {
@@ -21,7 +51,6 @@ export function EditalVerticalizado({ initialData }: { initialData: any[] }) {
       reader.readAsDataURL(file);
       reader.onload = () => {
         const result = reader.result as string;
-        // Pega apenas a string em base64 removendo o cabeçalho (data:application/pdf;base64,...)
         resolve(result.split(",")[1]);
       };
       reader.onerror = (error) => reject(error);
@@ -148,11 +177,52 @@ export function EditalVerticalizado({ initialData }: { initialData: any[] }) {
   const progressPercent = totalTopics === 0 ? 0 : Math.round((completedTopics / totalTopics) * 100);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      
+      {/* Header Interativo (Nome e Excluir) */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/40 p-4 rounded-xl border border-slate-800">
+        <div className="flex items-center gap-3">
+          <div className="bg-emerald-500/20 p-2 rounded-lg">
+            <Target className="text-emerald-400" size={24} />
+          </div>
+          {isEditingName ? (
+            <div className="flex items-center gap-2">
+              <input 
+                type="text" 
+                value={examName} 
+                onChange={(e) => setExamName(e.target.value)}
+                className="bg-slate-950 border border-amber-500/50 rounded p-1 text-white text-lg font-bold focus:outline-none w-full max-w-[200px]"
+                autoFocus
+                onKeyDown={(e) => e.key === 'Enter' && saveExamName()}
+              />
+              <button onClick={saveExamName} className="text-emerald-400 hover:bg-emerald-400/20 p-1.5 rounded transition">
+                <Check size={18} />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 group">
+              <h2 className="text-xl font-bold text-white">{examName}</h2>
+              <button onClick={() => setIsEditingName(true)} className="text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity hover:text-amber-400">
+                <Edit2 size={16} />
+              </button>
+            </div>
+          )}
+        </div>
+        
+        <button 
+          onClick={handleDelete}
+          disabled={isDeleting}
+          className="flex items-center justify-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg text-sm font-medium transition-colors border border-red-500/20"
+        >
+          {isDeleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+          Excluir Edital
+        </button>
+      </div>
+
       {/* Progresso Geral */}
       <div className="bg-slate-900/60 p-4 rounded-xl border border-slate-800">
         <div className="flex justify-between text-sm mb-2">
-          <span className="text-slate-400 font-medium">Progresso do Edital</span>
+          <span className="text-slate-400 font-medium">Progresso Geral</span>
           <span className="text-emerald-400 font-bold">{progressPercent}% ({completedTopics}/{totalTopics})</span>
         </div>
         <div className="w-full bg-slate-800 rounded-full h-2">

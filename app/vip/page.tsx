@@ -1,15 +1,15 @@
 import React from "react";
-import { BrainCircuit, Target, Headphones, Sparkles, Lock, ArrowLeft } from "lucide-react";
+import { BrainCircuit, Target, Headphones, Sparkles, Lock, ArrowLeft, BarChart3, Calendar } from "lucide-react";
 import { SmartCycle } from "@/components/dashboard/SmartCycle";
 import { EditalVerticalizado } from "@/components/dashboard/EditalVerticalizado";
 import { AmbientSounds } from "@/components/dashboard/AmbientSounds";
+import { FocusWrapper } from "@/components/dashboard/FocusWrapper";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { getUserProfile, getEditalVerticalizado, getTodayReviews, getSubjectAnalytics } from "@/app/actions";
 import { SubjectPieChart } from "@/components/dashboard/SubjectPieChart";
 import { ConsistencyHeatmap } from "@/components/dashboard/ConsistencyHeatmap";
-import { BarChart3, Calendar } from "lucide-react";
 
 export default async function VIPPage() {
   const profile = await getUserProfile();
@@ -64,60 +64,36 @@ export default async function VIPPage() {
             
             {/* Top row in main column - Gráficos de Base */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <section className="bg-slate-900/40 border border-slate-800/60 rounded-[24px] p-7 backdrop-blur-sm transition-all hover:border-amber-500/20">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-sm font-medium text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                    <BarChart3 size={16} className="text-cyan-400" /> Alocação de Tempo
-                  </h3>
-                </div>
+              <FocusWrapper title={<><BarChart3 size={16} className="text-cyan-400" /> Alocação de Tempo</>}>
                 <div className="h-[250px] w-full">
                   <SubjectPieChart data={chartData} />
                 </div>
-              </section>
+              </FocusWrapper>
 
-              <section className="bg-slate-900/40 border border-slate-800/60 rounded-[24px] p-7 backdrop-blur-sm transition-all hover:border-amber-500/20">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-sm font-medium text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                    <Calendar size={16} className="text-indigo-400" /> Consistência
-                  </h3>
-                </div>
+              <FocusWrapper title={<><Calendar size={16} className="text-indigo-400" /> Consistência</>}>
                 <div className="w-full overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-slate-800 flex items-center justify-center h-[250px]">
                   <ConsistencyHeatmap />
                 </div>
-              </section>
+              </FocusWrapper>
             </div>
             
-            <section className="bg-slate-900/40 border border-slate-800/60 rounded-[24px] p-7 backdrop-blur-sm transition-all hover:border-amber-500/20">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-sm font-medium text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                  <Target size={16} className="text-emerald-400" /> Edital Verticalizado Inteligente
-                </h3>
-              </div>
+            <FocusWrapper title={<><Target size={16} className="text-emerald-400" /> Edital Verticalizado Inteligente</>}>
               <EditalVerticalizado initialData={editalData || []} />
-            </section>
+            </FocusWrapper>
 
-            <section className="bg-slate-900/40 border border-slate-800/60 rounded-[24px] p-7 backdrop-blur-sm transition-all hover:border-amber-500/20">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-sm font-medium text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                  <Headphones size={16} className="text-amber-400" /> Foco Profundo (Sintetizador Binaural)
-                </h3>
-              </div>
+            <FocusWrapper title={<><Headphones size={16} className="text-amber-400" /> Sintetizador Binaural Focus</>}>
               <AmbientSounds />
-            </section>
+            </FocusWrapper>
+            
           </div>
 
-          {/* Side Column */}
+          {/* Right Column - Sidebars */}
           <div className="lg:col-span-4 space-y-6">
-            <section className="bg-slate-900/40 border border-slate-800/60 rounded-[24px] p-7 backdrop-blur-sm transition-all hover:border-amber-500/20">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-sm font-medium text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                  <BrainCircuit size={16} className="text-purple-400" /> Ciclo Inteligente (SM-2)
-                </h3>
-              </div>
+            <FocusWrapper title={<><BrainCircuit size={16} className="text-fuchsia-400" /> Smart Cycle (Revisão Espaçada)</>}>
               <SmartCycle reviews={todayReviews} />
-            </section>
+            </FocusWrapper>
           </div>
-
+          
         </div>
       </div>
     </div>
