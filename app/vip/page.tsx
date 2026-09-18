@@ -1,12 +1,12 @@
 import React from "react";
 import { BrainCircuit, Target, Headphones, Sparkles, Lock, ArrowLeft } from "lucide-react";
 import { SmartCycle } from "@/components/dashboard/SmartCycle";
-import { EditalProjection } from "@/components/dashboard/EditalProjection";
+import { EditalVerticalizado } from "@/components/dashboard/EditalVerticalizado";
 import { AmbientSounds } from "@/components/dashboard/AmbientSounds";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { getUserProfile, getEditalGoal, getTotalStudiedHours, getTodayReviews, getSubjectAnalytics } from "@/app/actions";
+import { getUserProfile, getEditalVerticalizado, getTodayReviews, getSubjectAnalytics } from "@/app/actions";
 import { SubjectPieChart } from "@/components/dashboard/SubjectPieChart";
 import { ConsistencyHeatmap } from "@/components/dashboard/ConsistencyHeatmap";
 import { BarChart3, Calendar } from "lucide-react";
@@ -24,8 +24,7 @@ export default async function VIPPage() {
     redirect("/dashboard");
   }
 
-  const editalGoal = await getEditalGoal();
-  const totalHours = await getTotalStudiedHours();
+  const { data: editalData } = await getEditalVerticalizado();
   const todayReviews = await getTodayReviews();
   const { data: chartData } = await getSubjectAnalytics();
 
@@ -87,13 +86,14 @@ export default async function VIPPage() {
                 </div>
               </section>
             </div>
+            
             <section className="bg-slate-900/40 border border-slate-800/60 rounded-[24px] p-7 backdrop-blur-sm transition-all hover:border-amber-500/20">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-sm font-medium text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                  <Target size={16} className="text-emerald-400" /> Projeção de Edital
+                  <Target size={16} className="text-emerald-400" /> Edital Verticalizado Inteligente
                 </h3>
               </div>
-              <EditalProjection initialGoal={editalGoal} totalHours={totalHours} />
+              <EditalVerticalizado initialData={editalData} />
             </section>
 
             <section className="bg-slate-900/40 border border-slate-800/60 rounded-[24px] p-7 backdrop-blur-sm transition-all hover:border-amber-500/20">

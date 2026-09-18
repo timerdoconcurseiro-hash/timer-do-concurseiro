@@ -229,3 +229,82 @@ export async function markReviewCompleted(reviewId: string) {
   if (error) return { success: false, error: error.message };
   return { success: true };
 }
+
+// ==========================================
+// EDITAL VERTICALIZADO (IA + GAMIFICAÇÃO)
+// ==========================================
+
+export async function saveGeneratedEdital(editalData: any) {
+  const supabase = await createClient();
+  const { data: authData } = await supabase.auth.getUser();
+  if (!authData.user) return { success: false, error: "Não autenticado" };
+
+  try {
+    // Para cada subject, insere no banco
+    for (const subject of editalData.subjects) {
+      const { data: subjData, error: subjErr } = await supabase
+        .from('edital_subjects')
+        .insert({
+          user_id: authData.user.id,
+          name: subject.name,
+          target_hours: subject.target_hours,
+        })
+        .select()
+        .single();
+        
+      if (subjErr) throw subjErr;
+
+      // Para cada tópico do subject, insere
+      const topicsToInsert = subject.topics.map((topicName: string) => ({
+        subject_id: subjData.id,
+        name: topicName,
+        completed: false
+      }));
+
+      if (topicsToInsert.length > 0) {
+        const { error: topErr } = await supabase
+          .from('edital_topics')
+          .insert(topicsToInsert);
+          
+        if (topErr) throw topErr;
+      }
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    console.error("Erro ao salvar edital:", err);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function getEditalVerticalizado() {
+  const supabase = await createClient();
+  const { data: authData } = await supabase.auth.getUser();
+  if (!authData.user) return { success: false, data: [] };
+
+  const { data, error } = await supabase
+    .from('edital_subjects')
+    .select(`
+      id, name, target_hours, studied_hours,
+      edital_topics (id, name, completed)
+    `)
+    .eq('user_id', authData.user.id)
+    .order('created_at', { ascending: true });
+
+  if (error) return { success: false, error: error.message };
+  return { success: true, data };
+}
+
+export async function toggleTopicCompleted(topicId: string, completed: boolean) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from('edital_topics')
+    .update({ 
+      completed, 
+      completed_at: completed ? new Date().toISOString() : null 
+    })
+    .eq('id', topicId);
+
+  if (error) return { success: false, error: error.message };
+  return { success: true };
+}
