@@ -47,66 +47,92 @@ export default function PricingPage() {
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           
-          {/* Plano Anual */}
-          <div className="bg-slate-900/40 border border-slate-800 rounded-3xl p-8 flex flex-col backdrop-blur-sm relative">
-            <h3 className="text-xl font-medium text-slate-300">Acesso Anual</h3>
-            <div className="mt-4 flex items-baseline text-5xl font-bold text-white">
-              <span className="text-2xl text-slate-500 font-medium mr-1">R$</span>19<span className="text-2xl text-slate-500 font-medium">,90</span>
+          {/* Plano Mensal */}
+          <div className="bg-slate-900/40 border border-slate-800 rounded-3xl p-8 flex flex-col backdrop-blur-sm relative transition-transform hover:scale-105">
+            <h3 className="text-xl font-medium text-slate-300">Mensal</h3>
+            <div className="mt-4 flex items-baseline text-4xl font-bold text-white">
+              <span className="text-xl text-slate-500 font-medium mr-1">R$</span>29<span className="text-xl text-slate-500 font-medium">,90</span>
+              <span className="text-sm text-slate-500 font-normal ml-1">/mês</span>
             </div>
-            <p className="text-slate-400 text-sm mt-2">Menos de R$ 1,65 por mês.</p>
+            <p className="text-slate-400 text-sm mt-2">Acesso premium sem compromisso longo.</p>
             
             <ul className="mt-8 space-y-4 flex-1">
-              <li className="flex gap-3 text-slate-300 text-sm"><CheckCircle2 className="text-indigo-400 shrink-0" size={20}/> Sincronização em Nuvem (1 ano)</li>
-              <li className="flex gap-3 text-slate-300 text-sm"><CheckCircle2 className="text-indigo-400 shrink-0" size={20}/> Dashboard VIP de Produtividade</li>
-              <li className="flex gap-3 text-slate-300 text-sm"><CheckCircle2 className="text-indigo-400 shrink-0" size={20}/> Suporte via e-mail</li>
+              <li className="flex gap-3 text-slate-300 text-sm"><CheckCircle2 className="text-indigo-400 shrink-0" size={18}/> Edital Mágico I.A. (Limites de uso justo)</li>
+              <li className="flex gap-3 text-slate-300 text-sm"><CheckCircle2 className="text-indigo-400 shrink-0" size={18}/> Sala de Leitura com Flashcards</li>
+              <li className="flex gap-3 text-slate-300 text-sm"><CheckCircle2 className="text-indigo-400 shrink-0" size={18}/> Smart Cycle (Revisão SM-2)</li>
+              <li className="flex gap-3 text-slate-300 text-sm"><CheckCircle2 className="text-indigo-400 shrink-0" size={18}/> Player Binaural Focus</li>
             </ul>
 
             <button 
-              onClick={() => handleBuy("https://www.asaas.com/c/rl7enqcioxuv7lax")}
-              className="mt-8 w-full bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 px-6 py-4 rounded-xl font-bold transition-all text-center"
+              onClick={() => handleBuy("https://www.asaas.com/c/yynfh4qaq959g46f")}
+              className="mt-8 w-full bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 px-6 py-4 rounded-xl font-bold transition-all text-center text-sm"
             >
-              Assinar Anual
+              Assinar Mensal
             </button>
           </div>
 
-          {/* Plano Vitalício (Destaque) */}
+          {/* Plano Anual (Destaque) */}
           <div className="bg-gradient-to-b from-indigo-900/50 to-slate-900/80 border-2 border-indigo-500 rounded-3xl p-8 flex flex-col relative transform md:-translate-y-4 shadow-2xl shadow-indigo-900/20">
             <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
               <span className="bg-indigo-500 text-white text-xs font-bold uppercase tracking-wider py-1.5 px-4 rounded-full shadow-lg">
-                Recomendado
+                Recomendado (Maior Economia)
               </span>
             </div>
             
             <h3 className="text-xl font-medium text-indigo-300 flex items-center gap-2">
-              <Zap size={20} /> Acesso Vitalício
+              <Zap size={20} /> Anual
             </h3>
             <div className="mt-4 flex items-baseline text-5xl font-bold text-white">
-              <span className="text-2xl text-indigo-300 font-medium mr-1">R$</span>34<span className="text-2xl text-indigo-300 font-medium">,90</span>
+              <span className="text-2xl text-indigo-300 font-medium mr-1">R$</span>147<span className="text-2xl text-indigo-300 font-medium">,00</span>
+              <span className="text-sm text-indigo-200/50 font-normal ml-1">/ano</span>
             </div>
-            <p className="text-indigo-200/60 text-sm mt-2">Pagamento Único. Seu para sempre.</p>
+            <p className="text-emerald-400 font-medium text-sm mt-2">Equivale a apenas R$ 12,25 por mês.</p>
             
             <ul className="mt-8 space-y-4 flex-1">
-              <li className="flex gap-3 text-slate-200 text-sm font-medium"><CheckCircle2 className="text-emerald-400 shrink-0" size={20}/> Tudo do plano Anual, para sempre</li>
-              <li className="flex gap-3 text-slate-200 text-sm font-medium"><CheckCircle2 className="text-emerald-400 shrink-0" size={20}/> Ciclo Inteligente (IA de Revisão)</li>
-              <li className="flex gap-3 text-slate-200 text-sm font-medium"><CheckCircle2 className="text-emerald-400 shrink-0" size={20}/> Player de Foco Profundo (Binaurais)</li>
-              <li className="flex gap-3 text-slate-200 text-sm font-medium"><CheckCircle2 className="text-emerald-400 shrink-0" size={20}/> Projeção Automática de Edital</li>
-              <li className="flex gap-3 text-slate-200 text-sm font-medium"><CheckCircle2 className="text-emerald-400 shrink-0" size={20}/> Atualizações futuras garantidas</li>
+              <li className="flex gap-3 text-slate-200 text-sm font-medium"><CheckCircle2 className="text-emerald-400 shrink-0" size={20}/> Todas as ferramentas premium</li>
+              <li className="flex gap-3 text-slate-200 text-sm font-medium"><CheckCircle2 className="text-emerald-400 shrink-0" size={20}/> Economia de R$ 211 no ano</li>
+              <li className="flex gap-3 text-slate-200 text-sm font-medium"><CheckCircle2 className="text-emerald-400 shrink-0" size={20}/> Acesso garantido até a prova</li>
+              <li className="flex gap-3 text-slate-200 text-sm font-medium"><CheckCircle2 className="text-emerald-400 shrink-0" size={20}/> Suporte prioritário VIP</li>
             </ul>
 
             <button 
-              onClick={() => handleBuy("https://www.asaas.com/c/y8o2lixxmjz22dsr")}
+              onClick={() => handleBuy("https://www.asaas.com/c/jqvvta85thlc1civ")}
               className="mt-8 w-full bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-4 rounded-xl font-bold transition-all transform hover:scale-105 shadow-[0_0_20px_rgba(79,70,229,0.3)] text-center text-lg"
             >
-              Garantir Vitalício
+              Garantir Plano Anual
             </button>
+          </div>
+
+          {/* Plano Vitalício */}
+          <div className="bg-slate-900/40 border border-slate-800 rounded-3xl p-8 flex flex-col backdrop-blur-sm relative transition-transform hover:scale-105">
+            <h3 className="text-xl font-medium text-amber-400">Vitalício</h3>
+            <div className="mt-4 flex items-baseline text-4xl font-bold text-white">
+              <span className="text-xl text-slate-500 font-medium mr-1">R$</span>497<span className="text-xl text-slate-500 font-medium">,00</span>
+            </div>
+            <p className="text-slate-400 text-sm mt-2">Ou em até 12x no cartão.</p>
+            
+            <ul className="mt-8 space-y-4 flex-1">
+              <li className="flex gap-3 text-slate-300 text-sm"><CheckCircle2 className="text-amber-500 shrink-0" size={18}/> Pagamento único, acesso eterno*</li>
+              <li className="flex gap-3 text-slate-300 text-sm"><CheckCircle2 className="text-amber-500 shrink-0" size={18}/> Sem renovações surpresas</li>
+              <li className="flex gap-3 text-slate-300 text-sm"><CheckCircle2 className="text-amber-500 shrink-0" size={18}/> Atualizações futuras inclusas</li>
+              <li className="flex gap-3 text-slate-300 text-sm"><CheckCircle2 className="text-amber-500 shrink-0" size={18}/> O seu "companheiro" definitivo de estudos</li>
+            </ul>
+
+            <button 
+              onClick={() => handleBuy("https://www.asaas.com/c/vv2q0x46yc7h6oq0")}
+              className="mt-8 w-full bg-slate-800 hover:bg-amber-500/20 hover:text-amber-400 hover:border-amber-500/50 text-white border border-slate-700 px-6 py-4 rounded-xl font-bold transition-all text-center text-sm"
+            >
+              Comprar Vitalício
+            </button>
+            <p className="text-center text-[10px] text-slate-600 mt-3">* Consulte os termos de uso.</p>
           </div>
 
         </div>
 
         {/* Garantia */}
-        <div className="max-w-2xl mx-auto mt-12 bg-slate-900/60 border border-slate-800 rounded-2xl p-6 flex flex-col md:flex-row items-center md:items-start gap-4">
+        <div className="max-w-3xl mx-auto mt-12 bg-slate-900/60 border border-slate-800 rounded-2xl p-6 flex flex-col md:flex-row items-center md:items-start gap-4">
           <div className="bg-emerald-500/10 p-3 rounded-full shrink-0 mb-4 md:mb-0">
             <ShieldCheck size={32} className="text-emerald-400" />
           </div>
