@@ -6,7 +6,10 @@ import { AmbientSounds } from "@/components/dashboard/AmbientSounds";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { getUserProfile, getEditalGoal, getTotalStudiedHours, getTodayReviews } from "@/app/actions";
+import { getUserProfile, getEditalGoal, getTotalStudiedHours, getTodayReviews, getSubjectAnalytics } from "@/app/actions";
+import { SubjectPieChart } from "@/components/dashboard/SubjectPieChart";
+import { ConsistencyHeatmap } from "@/components/dashboard/ConsistencyHeatmap";
+import { BarChart3, Calendar } from "lucide-react";
 
 export default async function VIPPage() {
   const profile = await getUserProfile();
@@ -24,6 +27,7 @@ export default async function VIPPage() {
   const editalGoal = await getEditalGoal();
   const totalHours = await getTotalStudiedHours();
   const todayReviews = await getTodayReviews();
+  const { data: chartData } = await getSubjectAnalytics();
 
   return (
     <div className="min-h-screen bg-[#090C15] text-slate-200 p-4 md:p-8 font-sans selection:bg-amber-500/30">
@@ -58,6 +62,31 @@ export default async function VIPPage() {
           
           {/* Main Column */}
           <div className="lg:col-span-8 space-y-6">
+            
+            {/* Top row in main column - Gráficos de Base */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <section className="bg-slate-900/40 border border-slate-800/60 rounded-[24px] p-7 backdrop-blur-sm transition-all hover:border-amber-500/20">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-sm font-medium text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                    <BarChart3 size={16} className="text-cyan-400" /> Alocação de Tempo
+                  </h3>
+                </div>
+                <div className="h-[250px] w-full">
+                  <SubjectPieChart data={chartData} />
+                </div>
+              </section>
+
+              <section className="bg-slate-900/40 border border-slate-800/60 rounded-[24px] p-7 backdrop-blur-sm transition-all hover:border-amber-500/20">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-sm font-medium text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                    <Calendar size={16} className="text-indigo-400" /> Consistência
+                  </h3>
+                </div>
+                <div className="w-full overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-slate-800 flex items-center justify-center h-[250px]">
+                  <ConsistencyHeatmap />
+                </div>
+              </section>
+            </div>
             <section className="bg-slate-900/40 border border-slate-800/60 rounded-[24px] p-7 backdrop-blur-sm transition-all hover:border-amber-500/20">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-sm font-medium text-slate-400 uppercase tracking-wider flex items-center gap-2">
