@@ -9,11 +9,15 @@ import { PremiumObserver } from "@/components/dashboard/PremiumObserver";
 import { VerifyPaymentButton } from "@/components/dashboard/VerifyPaymentButton";
 import Link from "next/link";
 
-import { getUserProfile, getSubjectAnalytics } from "@/app/actions";
+import { getUserProfile, getSubjectAnalytics, getEditalGoal, getTotalStudiedHours, getTodayReviews } from "@/app/actions";
 
 export default async function DashboardPage() {
   const profile = await getUserProfile();
   const { data: chartData } = await getSubjectAnalytics();
+  
+  const editalGoal = await getEditalGoal();
+  const totalHours = await getTotalStudiedHours();
+  const todayReviews = await getTodayReviews();
   
   const isPremium = profile?.plan === 'premium';
 
@@ -139,7 +143,7 @@ export default async function DashboardPage() {
                     <Target size={16} className="text-emerald-400" /> Projeção de Edital
                   </h3>
                 </div>
-                <EditalProjection />
+                <EditalProjection initialGoal={editalGoal} totalHours={totalHours} />
               </section>
             </div>
 
@@ -162,10 +166,10 @@ export default async function DashboardPage() {
             <section className="bg-slate-900/40 border border-slate-800/60 rounded-[24px] p-7 backdrop-blur-sm transition-all hover:border-slate-700/80">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-sm font-medium text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                  <BrainCircuit size={16} className="text-purple-400" /> Ciclo Inteligente
+                  <BrainCircuit size={16} className="text-purple-400" /> Ciclo Inteligente (SM-2)
                 </h3>
               </div>
-              <SmartCycle />
+              <SmartCycle reviews={todayReviews} />
             </section>
 
             <section className="bg-slate-900/40 border border-slate-800/60 rounded-[24px] p-7 backdrop-blur-sm transition-all hover:border-slate-700/80">

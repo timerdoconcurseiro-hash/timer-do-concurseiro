@@ -7,6 +7,7 @@ import { SoundSelect } from "./SoundSelect";
 import { HistoryPanel } from "@/components/history/HistoryPanel";
 import { GoalProgress } from "@/components/goals/GoalProgress";
 import { GoalAchievedModal } from "@/components/goals/GoalAchievedModal";
+import { FlashcardModal } from "./FlashcardModal";
 import {
   addSession,
   clearSessions,
@@ -34,6 +35,8 @@ export function TimerApp() {
   const [streakDays, setStreakDays] = useState(0);
   const [sound, setSound] = useState<SoundOption>("suave");
   const [showGoalModal, setShowGoalModal] = useState(false);
+  const [showFlashcards, setShowFlashcards] = useState(false);
+  const [lastSessionContext, setLastSessionContext] = useState({ subject: "", topic: "" });
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -78,6 +81,10 @@ export function TimerApp() {
     );
     setStreakDays(streak.current);
     if (justMet) setShowGoalModal(true);
+
+    // Abre o modal de flashcards
+    setLastSessionContext({ subject: session.subject, topic: session.topic || "" });
+    setShowFlashcards(true);
   }
 
   function handleClearAll() {
@@ -143,6 +150,13 @@ export function TimerApp() {
       <GoalAchievedModal
         open={showGoalModal}
         onClose={() => setShowGoalModal(false)}
+      />
+
+      <FlashcardModal 
+        isOpen={showFlashcards} 
+        onClose={() => setShowFlashcards(false)} 
+        subject={lastSessionContext.subject}
+        topic={lastSessionContext.topic}
       />
     </div>
   );
