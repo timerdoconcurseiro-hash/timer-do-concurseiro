@@ -55,6 +55,22 @@ export default async function DashboardPage() {
           </div>
         </header>
 
+        {/* Acesso a Area VIP para usuarios Premium */}
+        {isPremium && (
+          <div className="relative overflow-hidden rounded-[24px] bg-gradient-to-br from-amber-500/20 via-slate-900/80 to-slate-900/90 border border-amber-500/50 p-8 md:p-12 text-center">
+            <Sparkles className="text-amber-400 mx-auto mb-4" size={48} />
+            <h2 className="text-3xl md:text-4xl font-light text-white mb-4">
+              Sua assinatura <span className="font-bold text-amber-400">Premium</span> está ativa!
+            </h2>
+            <p className="text-slate-400 text-lg mb-8 max-w-2xl mx-auto">
+              Você tem acesso total à Projeção de Edital, Áudios Binaurais de Foco Profundo e ao Ciclo Inteligente (SM-2).
+            </p>
+            <Link href="/vip" className="inline-flex bg-amber-500 hover:bg-amber-400 text-slate-900 px-10 py-5 rounded-full font-bold shadow-[0_0_40px_rgba(245,158,11,0.4)] transition-all transform hover:scale-105 hover:-translate-y-1 tracking-wide items-center justify-center gap-3 text-lg">
+              ACESSAR ÁREA PREMIUM
+            </Link>
+          </div>
+        )}
+
         {/* Persuasive Paywall Banner (Somente para Free) */}
         {!isPremium && (
           <div className="relative overflow-hidden rounded-[24px] bg-gradient-to-br from-indigo-900/40 via-slate-900/80 to-slate-900/90 border border-indigo-500/30 p-1">
