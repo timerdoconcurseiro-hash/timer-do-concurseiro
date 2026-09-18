@@ -13,13 +13,23 @@ export async function saveStudySession(data: {
 }) {
   const supabase = await createClient();
   
-  // 1. Verificar usuário logado
+  // 1. Validação de Segurança dos Dados (Evita números negativos ou strings imensas/XSS)
+  if (
+    typeof data.subject !== "string" || data.subject.length > 100 ||
+    typeof data.mode !== "string" ||
+    typeof data.netSeconds !== "number" || data.netSeconds < 0 ||
+    typeof data.grossSeconds !== "number" || data.grossSeconds < 0
+  ) {
+    return { success: false, error: "Dados de entrada inválidos." };
+  }
+
+  // 2. Verificar usuário logado
   const { data: authData } = await supabase.auth.getUser();
   if (!authData.user) {
     return { success: false, error: "Usuário não autenticado." };
   }
 
-  // 2. Inserir na tabela
+  // 3. Inserir na tabela
   const { error } = await supabase.from("study_sessions").insert({
     user_id: authData.user.id,
     subject: data.subject,
