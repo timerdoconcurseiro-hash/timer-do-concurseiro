@@ -8,9 +8,25 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 );
 
+// Responde a testes de ping/validação via GET
+export async function GET() {
+  return NextResponse.json({ status: "Webhook is alive" }, { status: 200 });
+}
+
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch (e) {
+      // Se o Asaas mandar um payload vazio (apenas para testar a URL)
+      return NextResponse.json({ status: "Webhook test received" }, { status: 200 });
+    }
+
+    // Se for só um teste de ping da interface do Asaas
+    if (!body || !body.event) {
+      return NextResponse.json({ status: "Webhook test received" }, { status: 200 });
+    }
 
     // O Asaas manda o tipo de evento (ex: PAYMENT_RECEIVED ou PAYMENT_CONFIRMED)
     const { event, payment } = body;
