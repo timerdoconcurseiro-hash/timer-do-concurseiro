@@ -1,8 +1,30 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: Request) {
   try {
+    const supabase = await createClient();
+    const { data: authData } = await supabase.auth.getUser();
+    
+    if (!authData.user) {
+      return NextResponse.json({ error: 'Não autorizado. Faça login.' }, { status: 401 });
+    }
+
+    // Verificar limites do usuário
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('ai_flashcard_count, plan')
+      .eq('id', authData.user.id)
+      .single();
+
+    const maxFlashcards = 100; // Limite de 100 envios para gerar flashcards
+    if (profile && profile.ai_flashcard_count >= maxFlashcards && profile.plan !== 'admin') {
+      return NextResponse.json({ 
+        error: `Limite atingido! Você já usou a Sala de Leitura ${maxFlashcards} vezes. Adquira mais créditos para continuar.` 
+      }, { status: 403 });
+    }
+
     const { textContext } = await request.json();
 
     if (!textContext || textContext.length < 50) {
@@ -45,6 +67,14 @@ export async function POST(request: Request) {
     
     // Como usamos responseMimeType: "application/json", o texto retornado já é JSON puro.
     const parsedData = JSON.parse(responseText);
+
+    // Incrementar contador de uso
+    if (profile) {
+      await supabase
+        .from('profiles')
+        .update({ ai_flashcard_count: (profile.ai_flashcard_count || 0) + 1 })
+        .eq('id', authData.user.id);
+    }
 
     return NextResponse.json({ success: true, data: parsedData });
   } catch (error: any) {

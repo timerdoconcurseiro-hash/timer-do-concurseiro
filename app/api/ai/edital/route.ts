@@ -1,8 +1,30 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: Request) {
   try {
+    const supabase = await createClient();
+    const { data: authData } = await supabase.auth.getUser();
+    
+    if (!authData.user) {
+      return NextResponse.json({ error: 'Não autorizado. Faça login.' }, { status: 401 });
+    }
+
+    // Verificar limites do usuário
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('ai_edital_count, plan')
+      .eq('id', authData.user.id)
+      .single();
+
+    const maxEditais = 5; // Limite de 5 editais gerados por IA
+    if (profile && profile.ai_edital_count >= maxEditais && profile.plan !== 'admin') {
+      return NextResponse.json({ 
+        error: `Limite atingido! Você já gerou ${maxEditais} editais com a Inteligência Artificial. Adquira mais créditos para continuar.` 
+      }, { status: 403 });
+    }
+
     const { syllabusText, pdfBase64 } = await request.json();
 
     if (!syllabusText && !pdfBase64) {
@@ -65,6 +87,14 @@ export async function POST(request: Request) {
     
     // JSON puro graças ao responseMimeType
     const parsedData = JSON.parse(responseText);
+
+    // Incrementar o contador de uso
+    if (profile) {
+      await supabase
+        .from('profiles')
+        .update({ ai_edital_count: (profile.ai_edital_count || 0) + 1 })
+        .eq('id', authData.user.id);
+    }
 
     return NextResponse.json({ success: true, data: parsedData });
   } catch (error: any) {
