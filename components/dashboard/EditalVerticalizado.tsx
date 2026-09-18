@@ -9,32 +9,59 @@ export function EditalVerticalizado({ initialData }: { initialData: any[] }) {
   const router = useRouter();
   const [isGenerating, setIsGenerating] = useState(false);
   const [syllabusText, setSyllabusText] = useState("");
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [openSubjects, setOpenSubjects] = useState<Record<string, boolean>>({});
 
   const hasEdital = initialData && initialData.length > 0;
 
+  // Converte arquivo para base64
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const result = reader.result as string;
+        // Pega apenas a string em base64 removendo o cabeçalho (data:application/pdf;base64,...)
+        resolve(result.split(",")[1]);
+      };
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
   const handleGenerate = async () => {
-    if (!syllabusText || syllabusText.length < 50) {
-      alert("Cole um conteúdo programático com pelo menos 50 caracteres.");
+    if (!syllabusText && !pdfFile) {
+      alert("Cole o texto do edital ou envie um arquivo PDF.");
+      return;
+    }
+    if (!pdfFile && syllabusText.length < 50) {
+      alert("O texto colado é muito curto.");
       return;
     }
 
     setIsGenerating(true);
     try {
+      let payload: any = { syllabusText };
+      
+      if (pdfFile) {
+        if (pdfFile.size > 5 * 1024 * 1024) {
+          throw new Error("O PDF é muito grande. Envie no máximo 5MB.");
+        }
+        const base64 = await fileToBase64(pdfFile);
+        payload = { pdfBase64: base64 };
+      }
+
       const res = await fetch("/api/ai/edital", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ syllabusText }),
+        body: JSON.stringify(payload),
       });
 
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Erro ao gerar edital com IA.");
 
-      // Salvar no banco
       const saveRes = await saveGeneratedEdital(json.data);
       if (!saveRes.success) throw new Error(saveRes.error);
 
-      // Recarregar a página para buscar os dados iniciais do banco
       router.refresh();
     } catch (error: any) {
       console.error(error);
@@ -50,7 +77,6 @@ export function EditalVerticalizado({ initialData }: { initialData: any[] }) {
 
   const handleToggleTopic = async (topicId: string, currentStatus: boolean) => {
     const newStatus = !currentStatus;
-    // Otimista: atualiza UI via refresh, mas idealmente teria estado local
     await toggleTopicCompleted(topicId, newStatus);
     router.refresh();
   };
@@ -58,24 +84,58 @@ export function EditalVerticalizado({ initialData }: { initialData: any[] }) {
   if (!hasEdital) {
     return (
       <div className="flex flex-col gap-4">
-        <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-xl mb-2">
-          <h4 className="text-amber-400 font-bold mb-2 flex items-center gap-2"><Wand2 size={18} /> Edital Mágico (IA)</h4>
-          <p className="text-sm text-amber-200/80 mb-4">
-            Cole abaixo o texto do "Conteúdo Programático" do seu edital. Nossa IA vai ler, extrair todas as disciplinas, criar a lista de tópicos e estimar a carga horária automaticamente para você.
+        <div className="bg-amber-500/10 border border-amber-500/30 p-5 rounded-xl mb-2">
+          <h4 className="text-amber-400 font-bold mb-2 flex items-center gap-2">
+            <Wand2 size={18} /> Edital Mágico (IA)
+          </h4>
+          <p className="text-sm text-amber-200/80 mb-4 leading-relaxed">
+            Nossa Inteligência Artificial vai ler o seu edital, extrair as matérias, criar a lista de tópicos detalhada e estimar a carga horária necessária. Escolha enviar o PDF ou colar o texto.
           </p>
-          <textarea 
-            className="w-full bg-slate-900/50 border border-slate-700 rounded-lg p-3 text-sm text-slate-300 focus:outline-none focus:border-amber-500 min-h-[150px]"
-            placeholder="Ex: LÍNGUA PORTUGUESA: 1 Compreensão e interpretação de textos. 2 Tipologia textual... DIREITO CONSTITUCIONAL: 1 Constituição: conceito, classificações..."
-            value={syllabusText}
-            onChange={(e) => setSyllabusText(e.target.value)}
-          />
+          
+          <div className="bg-slate-900/60 p-4 rounded-lg border border-slate-700/50 mb-4">
+            <h5 className="text-slate-300 font-semibold mb-2 text-sm flex items-center gap-2">
+              Opção 1: Enviar Arquivo PDF
+            </h5>
+            <div className="text-xs text-amber-500/80 mb-3 bg-amber-500/5 p-2 rounded border border-amber-500/20">
+              <strong>⚠️ ATENÇÃO:</strong> Envie um PDF contendo <strong>apenas a parte do "Conteúdo Programático"</strong> (o anexo das matérias). Não envie o edital completo de 100 páginas para evitar que a IA se confunda ou consuma tempo excessivo.
+            </div>
+            <input 
+              type="file" 
+              accept=".pdf"
+              onChange={(e) => {
+                setPdfFile(e.target.files?.[0] || null);
+                setSyllabusText(""); // Limpa o texto se escolher arquivo
+              }}
+              className="text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-amber-500/20 file:text-amber-400 hover:file:bg-amber-500/30"
+            />
+          </div>
+
+          <div className="flex items-center gap-4 my-2">
+            <div className="h-px bg-slate-800 flex-1"></div>
+            <span className="text-xs text-slate-500 font-bold uppercase">OU</span>
+            <div className="h-px bg-slate-800 flex-1"></div>
+          </div>
+
+          <div className="bg-slate-900/60 p-4 rounded-lg border border-slate-700/50 mt-4">
+            <h5 className="text-slate-300 font-semibold mb-2 text-sm flex items-center gap-2">
+              Opção 2: Colar o Texto
+            </h5>
+            <textarea 
+              className="w-full bg-slate-950/50 border border-slate-800 rounded-lg p-3 text-sm text-slate-300 focus:outline-none focus:border-amber-500 min-h-[150px] transition-colors disabled:opacity-50"
+              placeholder="Ex: LÍNGUA PORTUGUESA: 1 Compreensão e interpretação de textos. 2 Tipologia textual..."
+              value={syllabusText}
+              disabled={pdfFile !== null}
+              onChange={(e) => setSyllabusText(e.target.value)}
+            />
+          </div>
+
           <button 
             onClick={handleGenerate}
-            disabled={isGenerating || syllabusText.length < 50}
-            className="mt-4 w-full bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+            disabled={isGenerating || (!syllabusText && !pdfFile)}
+            className="mt-6 w-full bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold py-3.5 rounded-lg flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_20px_rgba(245,158,11,0.2)]"
           >
             {isGenerating ? <Loader2 size={18} className="animate-spin" /> : <Wand2 size={18} />}
-            {isGenerating ? "A IA está processando seu edital..." : "Gerar Edital Inteligente"}
+            {isGenerating ? "A IA está processando seu edital (pode demorar alguns segundos)..." : "Gerar Edital Inteligente"}
           </button>
         </div>
       </div>

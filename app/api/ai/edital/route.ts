@@ -3,10 +3,10 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export async function POST(request: Request) {
   try {
-    const { syllabusText } = await request.json();
+    const { syllabusText, pdfBase64 } = await request.json();
 
-    if (!syllabusText || syllabusText.length < 50) {
-      return NextResponse.json({ error: 'Texto muito curto.' }, { status: 400 });
+    if (!syllabusText && !pdfBase64) {
+      return NextResponse.json({ error: 'Nenhum texto ou PDF enviado.' }, { status: 400 });
     }
 
     const apiKey = process.env.GEMINI_API_KEY;
@@ -17,9 +17,27 @@ export async function POST(request: Request) {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
+    let parts: any[] = [];
+
+    if (pdfBase64) {
+      parts.push({
+        inlineData: {
+          data: pdfBase64,
+          mimeType: "application/pdf"
+        }
+      });
+      parts.push({
+        text: "Extraia o conteúdo programático do edital contido neste PDF."
+      });
+    } else {
+      parts.push({
+        text: `Texto do edital:\n${syllabusText}`
+      });
+    }
+
     const prompt = `
-    Você é um especialista em concursos públicos. O usuário colou o "Conteúdo Programático" de um edital abaixo.
-    Sua tarefa é fatiar esse texto em Disciplinas (Subjects) e seus respectivos Tópicos (Topics).
+    Você é um especialista em concursos públicos. O usuário enviou o "Conteúdo Programático" de um edital em anexo ou texto.
+    Sua tarefa é fatiar esse conteúdo em Disciplinas (Subjects) e seus respectivos Tópicos (Topics).
     Além disso, faça uma estimativa de quantas horas líquidas um aluno médio precisaria para estudar cada Disciplina inteira.
 
     Retorne EXATAMENTE um objeto JSON com o seguinte formato, sem formatação markdown em volta:
@@ -36,12 +54,10 @@ export async function POST(request: Request) {
         }
       ]
     }
-
-    Texto do edital:
-    ${syllabusText}
     `;
 
-    const result = await model.generateContent(prompt);
+    // Para o Gemini, o primeiro argumento pode ser um array combinando texto e dados inline
+    const result = await model.generateContent([prompt, ...parts]);
     const responseText = result.response.text();
     
     // Limpar markdown code blocks se o modelo retornar
