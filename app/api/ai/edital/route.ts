@@ -15,7 +15,10 @@ export async function POST(request: Request) {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
+    const model = genAI.getGenerativeModel({ 
+      model: 'gemini-flash-latest',
+      generationConfig: { responseMimeType: "application/json" }
+    });
 
     let parts: any[] = [];
 
@@ -40,7 +43,7 @@ export async function POST(request: Request) {
     Sua tarefa é fatiar esse conteúdo em Disciplinas (Subjects) e seus respectivos Tópicos (Topics).
     Além disso, faça uma estimativa de quantas horas líquidas um aluno médio precisaria para estudar cada Disciplina inteira.
 
-    Retorne EXATAMENTE um objeto JSON com o seguinte formato, sem formatação markdown em volta:
+    Retorne APENAS um objeto JSON válido, sem texto adicional, no seguinte formato:
     {
       "subjects": [
         {
@@ -60,9 +63,8 @@ export async function POST(request: Request) {
     const result = await model.generateContent([prompt, ...parts]);
     const responseText = result.response.text();
     
-    // Limpar markdown code blocks se o modelo retornar
-    let cleanJson = responseText.replace(/```json\n/g, '').replace(/```\n/g, '').replace(/```/g, '');
-    const parsedData = JSON.parse(cleanJson);
+    // JSON puro graças ao responseMimeType
+    const parsedData = JSON.parse(responseText);
 
     return NextResponse.json({ success: true, data: parsedData });
   } catch (error: any) {

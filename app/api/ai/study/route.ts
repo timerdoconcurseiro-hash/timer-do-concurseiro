@@ -15,7 +15,10 @@ export async function POST(request: Request) {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
+    const model = genAI.getGenerativeModel({ 
+      model: 'gemini-flash-latest',
+      generationConfig: { responseMimeType: "application/json" }
+    });
 
     const prompt = `
     Você é um professor especialista em preparação para concursos públicos.
@@ -25,7 +28,7 @@ export async function POST(request: Request) {
     1. Crie um resumo ultra-focado (bullet points) com os conceitos principais.
     2. Crie de 3 a 5 Flashcards (Pergunta e Resposta) cruciais sobre esse texto para que o aluno não esqueça.
 
-    Retorne EXATAMENTE um objeto JSON com este formato (sem blocos markdown \`\`\`json):
+    Retorne APENAS um objeto JSON válido, sem nenhum texto adicional, com este exato formato:
     {
       "summary": ["Ponto 1", "Ponto 2"],
       "flashcards": [
@@ -40,8 +43,8 @@ export async function POST(request: Request) {
     const result = await model.generateContent(prompt);
     const responseText = result.response.text();
     
-    let cleanJson = responseText.replace(/```json\n/g, '').replace(/```\n/g, '').replace(/```/g, '');
-    const parsedData = JSON.parse(cleanJson);
+    // Como usamos responseMimeType: "application/json", o texto retornado já é JSON puro.
+    const parsedData = JSON.parse(responseText);
 
     return NextResponse.json({ success: true, data: parsedData });
   } catch (error: any) {
