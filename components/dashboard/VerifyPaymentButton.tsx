@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Loader2, CheckCircle2 } from "lucide-react";
+import { RefreshCw, CheckCircle2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export function VerifyPaymentButton() {
@@ -26,27 +26,32 @@ export function VerifyPaymentButton() {
       if (data?.plan === 'premium') {
         setSuccess(true);
         setTimeout(() => {
-          router.push("/vip");
-          router.refresh();
-        }, 1000);
+          window.location.href = "/vip"; // Hard redirect garantido
+        }, 800);
         return;
       }
     }
     
     // Se ainda não for premium, só atualiza a tela
     router.refresh();
-    setLoading(false);
+    setTimeout(() => setLoading(false), 1000);
   };
 
   return (
     <button
       onClick={handleVerify}
       disabled={loading || success}
-      className={`mt-6 mx-auto flex items-center justify-center gap-2 text-sm transition-colors underline ${success ? 'text-emerald-400 no-underline' : 'text-slate-400 hover:text-white'}`}
+      className={`mt-4 mx-auto flex items-center justify-center gap-2 text-xs md:text-sm px-4 py-2 rounded-full border transition-all 
+        ${success 
+          ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' 
+          : 'bg-slate-800/50 border-slate-700/50 text-slate-400 hover:bg-slate-800 hover:text-slate-200 hover:border-slate-600'
+        }`}
     >
-      {loading && !success && <Loader2 className="animate-spin" size={16} />}
-      {success && <CheckCircle2 size={16} />}
-      {success ? "Pagamento Confirmado! Redirecionando..." : "Já comprei... acessar!"}
+      {success ? (
+        <><CheckCircle2 size={16} /> Acesso Liberado!</>
+      ) : (
+        <><RefreshCw size={14} className={loading ? "animate-spin" : ""} /> Validar Assinatura</>
+      )}
     </button>
   );
 }

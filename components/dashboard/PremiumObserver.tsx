@@ -23,7 +23,8 @@ export function PremiumObserver({ userId, currentPlan }: { userId: string, curre
         .single();
 
       if (isMounted && data?.plan === "premium") {
-        router.refresh(); // Faz o Next.js re-renderizar a página servidor, destravando o premium
+        // Redirecionamento Automático: Efeito Mágica após pagamento Asaas
+        window.location.href = '/vip'; 
       }
     }, 3000);
 

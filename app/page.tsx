@@ -28,13 +28,20 @@ export default function Home() {
         </p>
       </div>
 
-      <Link
-        href="/timer"
-        className="rounded-2xl bg-gradient-to-r from-action-start to-action-end px-6 py-3 font-medium text-app-bg shadow-lg transition hover:opacity-90"
-      >
-        Começar a estudar
-      </Link>
-
+      <div className="flex flex-col sm:flex-row gap-4 mt-4">
+        <Link
+          href="/pricing"
+          className="rounded-full bg-indigo-600 px-8 py-3.5 font-bold text-white shadow-[0_0_30px_rgba(79,70,229,0.3)] transition-all hover:scale-105 hover:bg-indigo-500"
+        >
+          Desbloquear Área VIP
+        </Link>
+        <Link
+          href="/timer"
+          className="rounded-full border border-slate-700 bg-slate-900/50 px-8 py-3.5 font-medium text-slate-300 shadow-lg backdrop-blur-sm transition-all hover:bg-slate-800 hover:text-white"
+        >
+          Usar Timer Grátis
+        </Link>
+      </div>
 
     </main>
   );

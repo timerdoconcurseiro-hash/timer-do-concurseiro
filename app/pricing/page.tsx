@@ -2,10 +2,33 @@
 
 import React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import { CheckCircle2, ShieldCheck, Zap, ArrowLeft } from "lucide-react";
 import { VerifyPaymentButton } from "@/components/dashboard/VerifyPaymentButton";
 
 export default function PricingPage() {
+  const router = useRouter();
+
+  const handleBuy = async (url: string) => {
+    const supabase = createClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      // Se não está logado, força o login e manda o callback voltar para o pricing pra continuar a compra
+      await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/pricing`,
+        },
+      });
+      return;
+    }
+    
+    // Se logado, abre a aba do Asaas
+    window.location.href = url;
+  };
+
   return (
     <div className="min-h-screen bg-[#090C15] text-slate-200 py-12 px-4 selection:bg-indigo-500/30">
       <div className="max-w-5xl mx-auto space-y-12">
@@ -40,14 +63,12 @@ export default function PricingPage() {
               <li className="flex gap-3 text-slate-300 text-sm"><CheckCircle2 className="text-indigo-400 shrink-0" size={20}/> Suporte via e-mail</li>
             </ul>
 
-            <a 
-              href="https://www.asaas.com/c/rl7enqcioxuv7lax"
-              target="_blank"
-              rel="noopener noreferrer"
+            <button 
+              onClick={() => handleBuy("https://www.asaas.com/c/rl7enqcioxuv7lax")}
               className="mt-8 w-full bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 px-6 py-4 rounded-xl font-bold transition-all text-center"
             >
               Assinar Anual
-            </a>
+            </button>
           </div>
 
           {/* Plano Vitalício (Destaque) */}
@@ -74,14 +95,12 @@ export default function PricingPage() {
               <li className="flex gap-3 text-slate-200 text-sm font-medium"><CheckCircle2 className="text-emerald-400 shrink-0" size={20}/> Atualizações futuras garantidas</li>
             </ul>
 
-            <a 
-              href="https://www.asaas.com/c/y8o2lixxmjz22dsr"
-              target="_blank"
-              rel="noopener noreferrer"
+            <button 
+              onClick={() => handleBuy("https://www.asaas.com/c/y8o2lixxmjz22dsr")}
               className="mt-8 w-full bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-4 rounded-xl font-bold transition-all transform hover:scale-105 shadow-[0_0_20px_rgba(79,70,229,0.3)] text-center text-lg"
             >
               Garantir Vitalício
-            </a>
+            </button>
           </div>
 
         </div>
