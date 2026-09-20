@@ -1,6 +1,7 @@
 export type SoundOption = "silencio" | "suave" | "despertador" | "forte";
 
 const audioInstances: Record<string, HTMLAudioElement> = {};
+let stopTimeout: NodeJS.Timeout | null = null;
 
 export function unlockAudio() {
   if (typeof window === "undefined") return;
@@ -21,10 +22,24 @@ export function unlockAudio() {
   }
 }
 
+export function stopAlert() {
+  if (typeof window === "undefined") return;
+  if (stopTimeout) {
+    clearTimeout(stopTimeout);
+    stopTimeout = null;
+  }
+  Object.values(audioInstances).forEach((audio) => {
+    audio.pause();
+    audio.currentTime = 0;
+  });
+}
+
 export function playAlert(option: SoundOption) {
   if (option === "silencio" || typeof window === "undefined") return;
 
   try {
+    stopAlert(); // Para qualquer áudio tocando e reseta o timeout
+
     const audio = audioInstances[option];
     if (!audio) {
       // Fallback
@@ -34,7 +49,13 @@ export function playAlert(option: SoundOption) {
       else if (option === "despertador") newAudio = new Audio("/sounds/Loop.mp3");
       else return;
       newAudio.volume = 0.8;
+      newAudio.loop = true;
       newAudio.play().catch((err) => console.log("Erro ao tocar áudio:", err));
+      
+      stopTimeout = setTimeout(() => {
+        newAudio.pause();
+        newAudio.currentTime = 0;
+      }, 6000);
       return;
     }
 
@@ -42,7 +63,13 @@ export function playAlert(option: SoundOption) {
     audio.pause();
     audio.currentTime = 0;
     audio.volume = 0.8;
+    audio.loop = true;
     audio.play().catch((err) => console.log("Erro ao tocar áudio:", err));
+
+    // Desliga automaticamente após 6 segundos
+    stopTimeout = setTimeout(() => {
+      stopAlert();
+    }, 6000);
   } catch (error) {
     console.error("Erro ao disparar áudio:", error);
   }

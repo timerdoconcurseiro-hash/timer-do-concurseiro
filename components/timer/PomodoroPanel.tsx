@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useTimerEngine } from "@/lib/timer-engine/useTimerEngine";
 import { formatMmSs } from "@/lib/timer-engine/engine";
-import { playAlert, unlockAudio, type SoundOption } from "@/lib/sounds/beep";
+import { playAlert, unlockAudio, stopAlert, type SoundOption } from "@/lib/sounds/beep";
 import type { StudySession } from "@/lib/storage/sessions";
 
 interface Preset {
@@ -153,6 +153,7 @@ export function PomodoroPanel({
     savePreset(next);
     setNotifiedForRun(false);
     setPreset(next);
+    stopAlert();
   }
 
   function applyCustom() {
@@ -168,12 +169,14 @@ export function PomodoroPanel({
       Notification.requestPermission();
     }
     unlockAudio(); // Desbloqueia o áudio na primeira interação do usuário
+    stopAlert(); // Para o alarme se ainda estiver tocando
     setNotifiedForRun(false);
     start();
   }
 
   function handleZerar() {
     reset();
+    stopAlert();
     setNotifiedForRun(false);
   }
 
