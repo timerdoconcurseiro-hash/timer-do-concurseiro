@@ -67,11 +67,28 @@ export async function POST(request: Request) {
     ${textContext.texto || textContext}
     `;
 
-    const result = await model.generateContent(prompt);
+    let result;
+    try {
+      result = await model.generateContent(prompt);
+    } catch (e: any) {
+      if (e.message && e.message.includes('404')) {
+        console.warn("Fallback to gemini-1.0-pro due to 404 on 1.5-flash");
+        const fallbackModel = genAI.getGenerativeModel({ model: 'gemini-1.0-pro' });
+        result = await fallbackModel.generateContent(prompt);
+      } else {
+        throw e;
+      }
+    }
     const responseText = result.response.text();
     
-    // Como usamos responseMimeType: "application/json", o texto retornado já é JSON puro.
-    const parsedData = JSON.parse(responseText);
+    let cleanText = responseText.trim();
+    if (cleanText.startsWith('```json')) {
+      cleanText = cleanText.replace(/```json\n?/, '').replace(/\n?```$/, '');
+    } else if (cleanText.startsWith('```')) {
+      cleanText = cleanText.replace(/```\n?/, '').replace(/\n?```$/, '');
+    }
+
+    const parsedData = JSON.parse(cleanText);
 
     // Incrementar contador de uso
     if (profile) {

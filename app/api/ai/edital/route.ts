@@ -83,11 +83,29 @@ export async function POST(request: Request) {
     }
     `;
 
-    const result = await model.generateContent([prompt, ...parts]);
+    let result;
+    try {
+      result = await model.generateContent([prompt, ...parts]);
+    } catch (e: any) {
+      if (e.message && e.message.includes('404')) {
+        console.warn("Fallback to gemini-1.0-pro due to 404 on 1.5-flash");
+        const fallbackModel = genAI.getGenerativeModel({ model: 'gemini-1.0-pro' });
+        result = await fallbackModel.generateContent([prompt, ...parts]);
+      } else {
+        throw e;
+      }
+    }
     const responseText = result.response.text();
     
-    // JSON puro graças ao responseMimeType
-    const parsedData = JSON.parse(responseText);
+    // Tratamento para MD JSON retornado por modelos mais antigos
+    let cleanText = responseText.trim();
+    if (cleanText.startsWith('```json')) {
+      cleanText = cleanText.replace(/```json\n?/, '').replace(/\n?```$/, '');
+    } else if (cleanText.startsWith('```')) {
+      cleanText = cleanText.replace(/```\n?/, '').replace(/\n?```$/, '');
+    }
+
+    const parsedData = JSON.parse(cleanText);
 
     // Incrementar o contador de uso
     if (profile) {
