@@ -71,7 +71,17 @@ export async function POST(request: Request) {
     try {
       result = await model.generateContent(prompt);
     } catch (e: any) {
-      if (e.message && e.message.includes('404')) {
+      if (e.message && (e.message.includes('503') || e.message.includes('429'))) {
+        console.warn("Fallback to gemini-pro-latest due to overload on flash");
+        try {
+          const fallbackModel = genAI.getGenerativeModel({ model: 'gemini-pro-latest' });
+          result = await fallbackModel.generateContent(prompt);
+        } catch (e2: any) {
+          console.warn("Fallback to gemini-2.5-flash due to overload on pro");
+          const finalModel = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+          result = await finalModel.generateContent(prompt);
+        }
+      } else if (e.message && e.message.includes('404')) {
         console.warn("Fallback to gemini-1.0-pro due to 404 on 1.5-flash");
         const fallbackModel = genAI.getGenerativeModel({ model: 'gemini-1.0-pro' });
         result = await fallbackModel.generateContent(prompt);
