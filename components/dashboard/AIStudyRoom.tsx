@@ -3,12 +3,16 @@
 import React, { useState, useEffect } from "react";
 import { Brain, FileText, Send, Loader2, Sparkles, CheckCircle2, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { saveAIFlashcards, getLastStudySession } from "@/app/actions";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export function AIStudyRoom() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const urlSubject = searchParams.get('subject');
+  const urlTopic = searchParams.get('topic');
+
   const [text, setText] = useState("");
-  const [subject, setSubject] = useState("");
+  const [subject, setSubject] = useState(urlSubject ? `${urlSubject} - ${urlTopic || ''}`.replace(/ - $/, '') : "");
   const [isProcessing, setIsProcessing] = useState(false);
   
   const [result, setResult] = useState<{ summary: string[]; flashcards: { question: string; answer: string }[] } | null>(null);
@@ -25,6 +29,7 @@ export function AIStudyRoom() {
     getLastStudySession().then(data => {
       if (data) {
         setLastSession(data);
+        setSubject(prev => prev || `${data.subject} - ${data.topic}`);
       }
     });
   }, []);

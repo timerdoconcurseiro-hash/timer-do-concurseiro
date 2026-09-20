@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { CheckCircle, Play, Sparkles, BookOpen, Clock } from "lucide-react";
+import { CheckCircle, Play, Sparkles, BookOpen, Clock, Brain } from "lucide-react";
 import Link from "next/link";
 import { toggleTopicCompleted } from "@/app/actions";
 import { useRouter } from "next/navigation";
@@ -92,6 +92,13 @@ export function DailyMissions({ initialData }: { initialData: any[] }) {
                   title="Iniciar Timer para esta missão"
                 >
                   <Play size={16} className="ml-1" />
+                </Link>
+                <Link 
+                  href={`/vip?subject=${encodeURIComponent(topic.subjectName)}&topic=${encodeURIComponent(topic.name)}`}
+                  className="bg-slate-800 hover:bg-amber-500/20 hover:text-amber-400 text-slate-300 w-10 h-10 rounded-full flex items-center justify-center transition-all"
+                  title="Gerar Resumo e Flashcards (Sala de I.A)"
+                >
+                  <Brain size={16} />
                 </Link>
                 <button 
                   onClick={() => handleComplete(topic.id)}
