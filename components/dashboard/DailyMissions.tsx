@@ -17,16 +17,29 @@ export function DailyMissions({ initialData }: { initialData: any[] }) {
     );
   }
 
-  // Acha os primeiros 3 tópicos não concluídos do edital para gerar a missão do dia
+  // Acha 3 tópicos não concluídos, intercalando disciplinas diferentes (Prática Intercalada)
   let pendingTopics: any[] = [];
-  for (const subject of initialData) {
-    for (const topic of subject.edital_topics) {
-      if (!topic.completed) {
-        pendingTopics.push({ ...topic, subjectName: subject.name });
-      }
-      if (pendingTopics.length >= 3) break;
+  const subjectsWithPending = initialData.map(s => ({
+    ...s,
+    pending: s.edital_topics.filter((t: any) => !t.completed)
+  })).filter(s => s.pending.length > 0);
+
+  let i = 0;
+  while (pendingTopics.length < 3 && subjectsWithPending.length > 0) {
+    const subjectIndex = i % subjectsWithPending.length;
+    const subject = subjectsWithPending[subjectIndex];
+    
+    if (subject.pending.length > 0) {
+      const topic = subject.pending.shift(); // Tira o primeiro pendente
+      pendingTopics.push({ ...topic, subjectName: subject.name });
     }
-    if (pendingTopics.length >= 3) break;
+    
+    // Remove disciplina se não tiver mais tópicos
+    if (subject.pending.length === 0) {
+      subjectsWithPending.splice(subjectIndex, 1);
+    } else {
+      i++;
+    }
   }
 
   if (pendingTopics.length === 0) {

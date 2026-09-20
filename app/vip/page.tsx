@@ -73,7 +73,7 @@ export default async function VIPPage() {
               </FocusWrapper>
 
               <FocusWrapper title={<><Calendar size={16} className="text-indigo-400" /> Consistência</>}>
-                <div className="w-full overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-slate-800 flex items-center justify-center h-[250px]">
+                <div className="w-full h-[250px] overflow-auto pb-2 scrollbar-thin scrollbar-thumb-slate-800 flex flex-col pt-4 px-2">
                   <ConsistencyHeatmap />
                 </div>
               </FocusWrapper>

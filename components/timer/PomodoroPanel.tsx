@@ -98,6 +98,10 @@ export function PomodoroPanel({
   
   const [notifiedForRun, setNotifiedForRun] = useState(false);
 
+  // Fila de Pomodoro (Queue)
+  const [queue, setQueue] = useState<Preset[]>([]);
+  const [isQueueMode, setIsQueueMode] = useState(false);
+
   // Modal de término
   const [showEndModal, setShowEndModal] = useState(false);
   const [correctAnswers, setCorrectAnswers] = useState("");
@@ -120,7 +124,28 @@ export function PomodoroPanel({
     }
     if (initDuration) {
       const mins = Math.floor(Number(initDuration) / 60);
-      setPreset({ label: `${mins} min Inteligente`, minutes: mins, kind: "foco" });
+      
+      const newQueue: Preset[] = [];
+      let remaining = mins;
+      
+      while (remaining > 0) {
+        if (remaining >= 25) {
+          newQueue.push({ label: "25 min Foco", minutes: 25, kind: "foco" });
+          remaining -= 25;
+          if (remaining > 0) {
+            newQueue.push({ label: "5 min Pausa", minutes: 5, kind: "pausa" });
+          }
+        } else {
+          newQueue.push({ label: `${remaining} min Foco (Final)`, minutes: remaining, kind: "foco" });
+          remaining = 0;
+        }
+      }
+      
+      if (newQueue.length > 0) {
+        setPreset(newQueue[0]);
+        setQueue(newQueue.slice(1));
+        setIsQueueMode(true);
+      }
     }
   }, [searchParams]);
 
@@ -151,16 +176,55 @@ export function PomodoroPanel({
       new Notification("Timer do Concurseiro", {
         body:
           preset.kind === "foco"
-            ? "Foco concluído! Sessão finalizada."
+            ? "Foco concluído! " + (queue.length > 0 ? "Hora da pausa." : "Sessão finalizada.")
             : "Pausa concluída! Hora de voltar ao foco.",
       });
     }
 
     if (preset.kind === "foco") {
-      setShowEndModal(true);
+      if (isQueueMode && queue.length > 0) {
+        // Salva apenas este bloco e avança
+        const now = new Date();
+        let finalSubject = subjectCategory === "outra" ? customSubject.trim() : subjectCategory;
+        if (!finalSubject) finalSubject = "Sem matéria definida";
+        const fullSubject = complement.trim() ? `${finalSubject} (${complement.trim()})` : finalSubject;
+
+        onSessionComplete({
+          subject: fullSubject,
+          mode: "pomodoro",
+          netSeconds: preset.minutes * 60,
+          startedAt: new Date(now.getTime() - preset.minutes * 60000).toISOString(),
+          endedAt: now.toISOString(),
+        });
+        
+        // Próximo da fila
+        const next = queue[0];
+        setQueue(queue.slice(1));
+        setPreset(next);
+        reset();
+        setNotifiedForRun(false);
+        setTimeout(() => start(), 500);
+      } else {
+        // Último bloco (ou modo normal) abre o modal
+        setShowEndModal(true);
+      }
+    } else {
+      // É pausa, transita automático para o próximo foco
+      if (isQueueMode && queue.length > 0) {
+        const next = queue[0];
+        setQueue(queue.slice(1));
+        setPreset(next);
+        reset();
+        setNotifiedForRun(false);
+        setTimeout(() => start(), 500);
+      } else {
+        reset();
+      }
     }
 
-    reset();
+    if (!isQueueMode && preset.kind !== "foco") {
+      reset();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDone, notifiedForRun]);
 

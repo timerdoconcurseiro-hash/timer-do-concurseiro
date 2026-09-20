@@ -65,6 +65,8 @@ export async function POST(request: Request) {
     Sua tarefa é fatiar esse conteúdo em Disciplinas (Subjects) e seus respectivos Tópicos (Topics).
     Além disso, faça uma estimativa de quantas horas líquidas um aluno médio precisaria para estudar cada Disciplina inteira.
 
+    Importante: Utilize "Prática Intercalada" (Interleaving). Nunca sugira mais de um bloco da mesma disciplina no mesmo dia. Aplique a regra 80/20 e alterne entre disciplinas diferentes para maximizar a retenção. Na estrutura de Tópicos gerada, caso necessário, distribua de forma que a IA ou o sistema possam intercalá-los adequadamente.
+
     Retorne APENAS um objeto JSON válido, sem texto adicional, no seguinte formato:
     {
       "subjects": [

@@ -24,22 +24,40 @@ export function AIStudyRoom() {
     setResult(null);
     setIsSaved(false);
 
-    try {
-      const res = await fetch("/api/ai/study", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ textContext: text })
-      });
+    const maxRetries = 2;
 
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "Erro na IA");
+    const executeFetch = async (currentAttempt: number) => {
+      try {
+        const res = await fetch("/api/ai/study", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ textContext: text })
+        });
 
-      setResult(json.data);
-    } catch (err: any) {
-      alert("Erro: " + err.message);
-    } finally {
-      setIsProcessing(false);
-    }
+        if (!res.ok) {
+          if ((res.status === 503 || res.status === 429) && currentAttempt < maxRetries) {
+            // Exponential backoff wait (2s, then 4s, etc.)
+            await new Promise(resolve => setTimeout(resolve, 2000 * (currentAttempt + 1)));
+            return executeFetch(currentAttempt + 1);
+          }
+          const json = await res.json().catch(() => ({}));
+          throw new Error(json.error || `Erro ${res.status}`);
+        }
+
+        const json = await res.json();
+        setResult(json.data);
+      } catch (err: any) {
+        if (currentAttempt < maxRetries && err.message.includes("Failed to fetch")) {
+          await new Promise(resolve => setTimeout(resolve, 2000 * (currentAttempt + 1)));
+          return executeFetch(currentAttempt + 1);
+        }
+        // Graceful degradation message
+        alert("Nossa IA está com alta demanda neste segundo. Por favor, aguarde alguns instantes e tente gerar o flashcard novamente.");
+      }
+    };
+
+    await executeFetch(0);
+    setIsProcessing(false);
   };
 
   const handleSaveFlashcards = async () => {
