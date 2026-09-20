@@ -1,7 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
-import { LeadCaptureModal } from "@/components/layout/LeadCaptureModal";
 
 export default function Home() {
   return (
@@ -49,8 +48,6 @@ export default function Home() {
           Já sou VIP (Login)
         </Link>
       </div>
-
-      <LeadCaptureModal />
     </main>
   );
 }
