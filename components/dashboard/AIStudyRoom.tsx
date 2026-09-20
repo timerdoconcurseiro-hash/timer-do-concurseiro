@@ -217,20 +217,25 @@ export function AIStudyRoom() {
                 onClick={() => setIsFlipped(!isFlipped)}
               >
                 {/* Front (Question) */}
-                <div className="absolute inset-0 backface-hidden bg-slate-900 border-2 border-slate-700 rounded-2xl p-8 flex flex-col justify-center items-center shadow-2xl">
-                  <h3 className="text-slate-400 mb-4 uppercase tracking-widest text-sm font-semibold">Pergunta</h3>
-                  <p className="text-white text-center" style={{ fontSize: 'clamp(1rem, 4vw, 1.5rem)', wordWrap: 'break-word', overflowY: 'auto' }}>
-                    {result.flashcards[currentCardIndex].question}
-                  </p>
-                  <p className="absolute bottom-6 text-slate-500 text-sm animate-pulse">Clique para Virar</p>
+                <div className="absolute inset-0 backface-hidden bg-slate-900 border-2 border-slate-700 rounded-2xl p-6 md:p-8 flex flex-col h-full shadow-2xl">
+                  <h3 className="text-slate-400 mb-4 uppercase tracking-widest text-sm font-semibold text-center shrink-0">Pergunta</h3>
+                  <div className="flex-1 overflow-y-auto w-full flex items-center justify-center">
+                    <p className="text-white text-center break-words" style={{ fontSize: 'clamp(1rem, 4vw, 1.5rem)' }}>
+                      {result.flashcards[currentCardIndex].question}
+                    </p>
+                  </div>
+                  <p className="text-slate-500 text-sm animate-pulse text-center mt-auto pt-4 shrink-0">Clique para Virar</p>
                 </div>
 
                 {/* Back (Answer) */}
-                <div className="absolute inset-0 backface-hidden bg-emerald-900 border-2 border-emerald-600 rounded-2xl p-8 flex flex-col justify-center items-center shadow-2xl rotate-y-180">
-                  <h3 className="text-emerald-300 mb-4 uppercase tracking-widest text-sm font-semibold">Resposta</h3>
-                  <p className="text-white text-center" style={{ fontSize: 'clamp(1rem, 4vw, 1.5rem)', wordWrap: 'break-word', overflowY: 'auto' }}>
-                    {result.flashcards[currentCardIndex].answer}
-                  </p>
+                <div className="absolute inset-0 backface-hidden bg-emerald-900 border-2 border-emerald-600 rounded-2xl p-6 md:p-8 flex flex-col h-full shadow-2xl rotate-y-180">
+                  <h3 className="text-emerald-300 mb-4 uppercase tracking-widest text-sm font-semibold text-center shrink-0">Resposta</h3>
+                  <div className="flex-1 overflow-y-auto w-full flex items-center justify-center">
+                    <p className="text-white text-center break-words" style={{ fontSize: 'clamp(1rem, 4vw, 1.5rem)' }}>
+                      {result.flashcards[currentCardIndex].answer}
+                    </p>
+                  </div>
+                  <p className="text-emerald-400 text-sm text-center mt-auto pt-4 shrink-0">Resposta Completa</p>
                 </div>
               </div>
             </div>

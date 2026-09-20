@@ -37,13 +37,15 @@ export async function POST(request: Request) {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    let model = genAI.getGenerativeModel({ 
-      model: 'gemini-1.5-flash-latest',
+    const model = genAI.getGenerativeModel({ 
+      model: 'gemini-1.5-flash',
       generationConfig: { responseMimeType: "application/json" }
     });
 
     const prompt = `
-    Você é um professor especialista em preparação para concursos públicos.
+    Você é um professor especialista em preparação para concursos públicos. E também um tutor focado na metodologia de revisão ativa (Flashcards). 
+    NUNCA forneça respostas genéricas, conselhos de estudo ou frases como 'tente relembrar os pontos'. Forneça EXCLUSIVAMENTE o conceito, a lei ou o resumo técnico exato que responde à pergunta gerada. Seja direto e objetivo.
+
     O aluno enviou um trecho de material de estudo e os dados da última sessão estudada:
     Disciplina: ${textContext.disciplina || "Não informada"}
     Assunto/Complemento: ${textContext.assunto_complemento || "Não informado"}
@@ -65,30 +67,11 @@ export async function POST(request: Request) {
     ${textContext.texto || textContext}
     `;
 
-    let result;
-    try {
-      result = await model.generateContent(prompt);
-    } catch (e: any) {
-      if (e.message && e.message.includes('404')) {
-        console.warn("Fallback to gemini-1.0-pro due to 404");
-        model = genAI.getGenerativeModel({ 
-          model: 'gemini-1.0-pro' 
-        });
-        result = await model.generateContent(prompt);
-      } else {
-        throw e;
-      }
-    }
+    const result = await model.generateContent(prompt);
     const responseText = result.response.text();
     
-    let cleanText = responseText.trim();
-    if (cleanText.startsWith('```json')) {
-      cleanText = cleanText.replace(/```json\n?/, '').replace(/\n?```$/, '');
-    } else if (cleanText.startsWith('```')) {
-      cleanText = cleanText.replace(/```\n?/, '').replace(/\n?```$/, '');
-    }
-
-    const parsedData = JSON.parse(cleanText);
+    // Como usamos responseMimeType: "application/json", o texto retornado já é JSON puro.
+    const parsedData = JSON.parse(responseText);
 
     // Incrementar contador de uso
     if (profile) {
