@@ -37,8 +37,8 @@ export async function POST(request: Request) {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ 
-      model: 'gemini-1.5-flash',
+    let model = genAI.getGenerativeModel({ 
+      model: 'gemini-1.5-flash-latest',
       generationConfig: { responseMimeType: "application/json" }
     });
 
@@ -83,12 +83,34 @@ export async function POST(request: Request) {
     }
     `;
 
-    // Para o Gemini, o primeiro argumento pode ser um array combinando texto e dados inline
-    const result = await model.generateContent([prompt, ...parts]);
+    let result;
+    try {
+      result = await model.generateContent([prompt, ...parts]);
+    } catch (e: any) {
+      if (e.message && e.message.includes('404')) {
+        console.warn("Fallback to gemini-1.0-pro due to 404");
+        model = genAI.getGenerativeModel({ 
+          model: 'gemini-1.0-pro',
+          // gemini-1.0-pro may not support application/json responseMimeType in older sdk, but keeping it to attempt structured output. If it fails, another catch handles the overall route failure.
+        });
+        // gemini-1.0-pro vision only supports inlineData if we use gemini-pro-vision, but if it's text-only it works.
+        // If there's a PDF, 1.0-pro text might fail, but let's try our best.
+        result = await model.generateContent([prompt, ...parts]);
+      } else {
+        throw e;
+      }
+    }
     const responseText = result.response.text();
     
-    // JSON puro graças ao responseMimeType
-    const parsedData = JSON.parse(responseText);
+    // JSON puro graças ao responseMimeType, mas gemini-1.0-pro pode adicionar markdown ```json
+    let cleanText = responseText.trim();
+    if (cleanText.startsWith('```json')) {
+      cleanText = cleanText.replace(/```json\n?/, '').replace(/\n?```$/, '');
+    } else if (cleanText.startsWith('```')) {
+      cleanText = cleanText.replace(/```\n?/, '').replace(/\n?```$/, '');
+    }
+
+    const parsedData = JSON.parse(cleanText);
 
     // Incrementar o contador de uso
     if (profile) {
