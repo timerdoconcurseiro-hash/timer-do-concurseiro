@@ -38,7 +38,7 @@ export async function POST(request: Request) {
 
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ 
-      model: 'gemini-flash-latest',
+      model: 'gemini-3.6-flash',
       generationConfig: { responseMimeType: "application/json" }
     });
 
@@ -72,18 +72,18 @@ export async function POST(request: Request) {
       result = await model.generateContent(prompt);
     } catch (e: any) {
       if (e.message && (e.message.includes('503') || e.message.includes('429'))) {
-        console.warn("Fallback to gemini-pro-latest due to overload on flash");
+        console.warn("Fallback to gemini-3.7-flash due to overload on 3.6-flash");
         try {
-          const fallbackModel = genAI.getGenerativeModel({ model: 'gemini-pro-latest' });
+          const fallbackModel = genAI.getGenerativeModel({ model: 'gemini-3.7-flash' });
           result = await fallbackModel.generateContent(prompt);
         } catch (e2: any) {
-          console.warn("Fallback to gemini-2.5-flash due to overload on pro");
-          const finalModel = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+          console.warn("Fallback to gemini-3.5-flash due to overload on 3.7-flash");
+          const finalModel = genAI.getGenerativeModel({ model: 'gemini-3.5-flash' });
           result = await finalModel.generateContent(prompt);
         }
       } else if (e.message && e.message.includes('404')) {
-        console.warn("Fallback to gemini-1.0-pro due to 404 on 1.5-flash");
-        const fallbackModel = genAI.getGenerativeModel({ model: 'gemini-1.0-pro' });
+        console.warn("Fallback to gemini-3.5-flash due to 404");
+        const fallbackModel = genAI.getGenerativeModel({ model: 'gemini-3.5-flash' });
         result = await fallbackModel.generateContent(prompt);
       } else {
         throw e;
