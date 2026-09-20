@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useTimerEngine } from "@/lib/timer-engine/useTimerEngine";
 import { formatMmSs } from "@/lib/timer-engine/engine";
-import { playAlert, type SoundOption } from "@/lib/sounds/beep";
+import { playAlert, unlockAudio, type SoundOption } from "@/lib/sounds/beep";
 import type { StudySession } from "@/lib/storage/sessions";
 
 interface Preset {
@@ -21,6 +21,37 @@ const PRESETS: Preset[] = [
   { label: "10 min Pausa", minutes: 10, kind: "pausa" },
   { label: "15 min Pausa", minutes: 15, kind: "pausa" },
   { label: "30 min Pausa", minutes: 30, kind: "pausa" },
+];
+
+const SUBJECTS = [
+  {
+    group: "1. Conhecimentos Básicos",
+    options: ["Língua Portuguesa", "Raciocínio Lógico-Matemático (RLM)", "Informática / TI", "Matemática", "Estatística"]
+  },
+  {
+    group: "2. Eixo Jurídico Fundamental",
+    options: ["Direito Constitucional", "Direito Administrativo"]
+  },
+  {
+    group: "3. Eixo Criminal",
+    options: ["Direito Penal", "Direito Processual Penal", "Legislação Penal Especial", "Criminologia", "Medicina Legal"]
+  },
+  {
+    group: "4. Eixo Cível, Empresarial e Difusos",
+    options: ["Direito Civil", "Direito Processual Civil", "Direito Empresarial", "Direito do Consumidor", "Estatuto da Criança e do Adolescente (ECA)", "Direitos Humanos", "Direito Ambiental", "Direito Internacional", "Ética Profissional"]
+  },
+  {
+    group: "5. Eixo Fiscal, Controle e Gestão",
+    options: ["Direito Tributário", "Contabilidade Geral", "Contabilidade Pública", "Auditoria", "Administração Financeira e Orçamentária (AFO)", "Administração Geral e Pública", "Economia", "Legislação Aduaneira", "Comércio Internacional"]
+  },
+  {
+    group: "6. Eixo Trabalhista e Eleitoral",
+    options: ["Direito do Trabalho", "Direito Processual do Trabalho", "Direito Eleitoral"]
+  },
+  {
+    group: "7. Específicas Policiais",
+    options: ["Legislação de Trânsito", "Física"]
+  }
 ];
 
 const PRESET_STORAGE_KEY = "timer:pomodoro:preset";
@@ -54,7 +85,12 @@ export function PomodoroPanel({
   const [preset, setPreset] = useState<Preset>(() => loadPreset());
   const [customMinutes, setCustomMinutes] = useState("");
   const [showCustom, setShowCustom] = useState(false);
-  const [subject, setSubject] = useState("");
+  
+  // Novos campos de disciplina e complemento
+  const [subjectCategory, setSubjectCategory] = useState("");
+  const [customSubject, setCustomSubject] = useState("");
+  const [complement, setComplement] = useState("");
+  
   const [notifiedForRun, setNotifiedForRun] = useState(false);
 
   const { runtime, elapsedMs, start, pause, reset } =
@@ -91,8 +127,13 @@ export function PomodoroPanel({
 
     if (preset.kind === "foco") {
       const now = new Date();
+      let finalSubject = subjectCategory === "outra" ? customSubject.trim() : subjectCategory;
+      if (!finalSubject) finalSubject = "Sem matéria definida";
+      
+      const fullSubject = complement.trim() ? `${finalSubject} (${complement.trim()})` : finalSubject;
+
       onSessionComplete({
-        subject: subject.trim() || "Sem matéria definida",
+        subject: fullSubject,
         mode: "pomodoro",
         netSeconds: preset.minutes * 60,
         startedAt: new Date(now.getTime() - preset.minutes * 60000).toISOString(),
@@ -126,6 +167,7 @@ export function PomodoroPanel({
     if ("Notification" in window && Notification.permission === "default") {
       Notification.requestPermission();
     }
+    unlockAudio(); // Desbloqueia o áudio na primeira interação do usuário
     setNotifiedForRun(false);
     start();
   }
@@ -138,21 +180,32 @@ export function PomodoroPanel({
   return (
     <div className="flex flex-col items-center gap-6">
       <div className="flex flex-wrap justify-center gap-2">
-        {PRESETS.map((p) => (
-          <button
-            key={p.label}
-            type="button"
-            disabled={runtime.running}
-            onClick={() => selectPreset(p)}
-            className={`rounded-full border px-3 py-1.5 text-sm transition disabled:opacity-40 ${
-              preset.label === p.label
-                ? "border-accent bg-accent/10 text-accent"
-                : "border-app-border text-text-secondary hover:border-accent-strong"
-            }`}
-          >
-            {p.label}
-          </button>
-        ))}
+        {PRESETS.map((p) => {
+          const isSelected = preset.label === p.label;
+          let buttonClass = "";
+          
+          if (p.kind === "foco") {
+            buttonClass = isSelected 
+              ? "border-accent bg-accent/10 text-accent" 
+              : "border-app-border text-text-secondary hover:border-accent-strong hover:text-accent-strong";
+          } else {
+            buttonClass = isSelected 
+              ? "border-emerald-500 bg-emerald-500/10 text-emerald-400" 
+              : "border-app-border text-text-secondary hover:border-emerald-500 hover:text-emerald-500";
+          }
+
+          return (
+            <button
+              key={p.label}
+              type="button"
+              disabled={runtime.running}
+              onClick={() => selectPreset(p)}
+              className={`rounded-full border px-3 py-1.5 text-sm transition disabled:opacity-40 ${buttonClass}`}
+            >
+              {p.label}
+            </button>
+          );
+        })}
         <button
           type="button"
           disabled={runtime.running}
@@ -186,7 +239,9 @@ export function PomodoroPanel({
       <div
         className={`flex h-56 w-56 items-center justify-center rounded-full border-4 font-display text-5xl tabular-nums transition ${
           runtime.running
-            ? "border-accent shadow-[0_0_40px_rgba(56,189,248,0.35)]"
+            ? preset.kind === "pausa" 
+              ? "border-emerald-500 shadow-[0_0_40px_rgba(16,185,129,0.35)]"
+              : "border-accent shadow-[0_0_40px_rgba(56,189,248,0.35)]"
             : "border-app-border"
         }`}
       >
@@ -194,24 +249,57 @@ export function PomodoroPanel({
       </div>
 
       <p className="text-sm text-text-secondary">
-        Modo atual: <span className="text-text-primary">{preset.kind === "foco" ? "Foco" : "Pausa"}</span>
+        Modo atual: <span className={`font-medium ${preset.kind === "pausa" ? "text-emerald-400" : "text-text-primary"}`}>{preset.kind === "foco" ? "Foco" : "Pausa"}</span>
       </p>
 
-      <input
-        type="text"
-        value={subject}
-        onChange={(e) => setSubject(e.target.value)}
-        placeholder="Qual matéria você vai estudar?"
-        className="w-full max-w-sm rounded-lg border border-app-border bg-app-surface px-4 py-2 text-sm text-text-primary outline-none focus:border-accent"
-      />
+      {/* Formulário de Disciplina e Complemento */}
+      <div className="w-full max-w-sm space-y-3">
+        <select
+          value={subjectCategory}
+          onChange={(e) => setSubjectCategory(e.target.value)}
+          className="w-full rounded-lg border border-app-border bg-app-surface px-4 py-2 text-sm text-text-primary outline-none focus:border-accent appearance-none"
+        >
+          <option value="">Selecione a Disciplina...</option>
+          {SUBJECTS.map((group) => (
+            <optgroup key={group.group} label={group.group}>
+              {group.options.map((opt) => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </optgroup>
+          ))}
+          <option value="outra">Outra...</option>
+        </select>
 
-      <div className="flex gap-3">
+        {subjectCategory === "outra" && (
+          <input
+            type="text"
+            value={customSubject}
+            onChange={(e) => setCustomSubject(e.target.value)}
+            placeholder="Digite a disciplina manualmente"
+            className="w-full rounded-lg border border-app-border bg-app-surface px-4 py-2 text-sm text-text-primary outline-none focus:border-accent"
+          />
+        )}
+
+        <input
+          type="text"
+          value={complement}
+          onChange={(e) => setComplement(e.target.value)}
+          placeholder="Complemento (ex: Atos Administrativos)"
+          className="w-full rounded-lg border border-app-border bg-app-surface px-4 py-2 text-sm text-text-primary outline-none focus:border-accent"
+        />
+      </div>
+
+      <div className="flex gap-3 mt-2">
         {!runtime.running ? (
           <button
             type="button"
             onClick={handleStart}
             disabled={isDone}
-            className="rounded-2xl bg-gradient-to-r from-action-start to-action-end px-6 py-2.5 font-medium text-app-bg shadow-lg transition hover:opacity-90 disabled:opacity-40"
+            className={`rounded-2xl px-6 py-2.5 font-medium text-app-bg shadow-lg transition hover:opacity-90 disabled:opacity-40 ${
+              preset.kind === "pausa" 
+                ? "bg-emerald-500" 
+                : "bg-gradient-to-r from-action-start to-action-end"
+            }`}
           >
             Iniciar
           </button>

@@ -34,10 +34,12 @@ export function GoalProgress({
             onClick={() => {
               const input = window.prompt(
                 "Nova meta diária (em horas):",
-                String(goalMinutes / 60),
+                String(goalMinutes / 60).replace(".", ","),
               );
-              const hours = Number(input);
-              if (Number.isFinite(hours) && hours > 0) {
+              if (input === null) return;
+              const parsedInput = input.replace(",", ".");
+              const hours = parseFloat(parsedInput);
+              if (!isNaN(hours) && hours > 0) {
                 onChangeGoal(Math.round(hours * 60));
               }
             }}
