@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useTimerEngine } from "@/lib/timer-engine/useTimerEngine";
 import { formatMmSs } from "@/lib/timer-engine/engine";
 import { playAlert, unlockAudio, stopAlert, type SoundOption } from "@/lib/sounds/beep";
 import type { StudySession } from "@/lib/storage/sessions";
+import { useSearchParams, useRouter } from "next/navigation";
+import { toggleTopicCompleted } from "@/app/actions";
 
 interface Preset {
   label: string;
@@ -82,6 +84,9 @@ export function PomodoroPanel({
   soundOption,
   onSessionComplete,
 }: PomodoroPanelProps) {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
   const [preset, setPreset] = useState<Preset>(() => loadPreset());
   const [customMinutes, setCustomMinutes] = useState("");
   const [showCustom, setShowCustom] = useState(false);
@@ -92,6 +97,32 @@ export function PomodoroPanel({
   const [complement, setComplement] = useState("");
   
   const [notifiedForRun, setNotifiedForRun] = useState(false);
+
+  // Modal de término
+  const [showEndModal, setShowEndModal] = useState(false);
+  const [correctAnswers, setCorrectAnswers] = useState("");
+  const [totalQuestions, setTotalQuestions] = useState("");
+
+  const topicId = searchParams?.get("topicId") || "";
+
+  // Inicializa via parâmetros de URL
+  useEffect(() => {
+    const initSubject = searchParams?.get("subject");
+    const initTopic = searchParams?.get("topic");
+    const initDuration = searchParams?.get("duration"); // em segundos
+
+    if (initSubject && !subjectCategory) {
+      setSubjectCategory("outra");
+      setCustomSubject(initSubject);
+    }
+    if (initTopic && !complement) {
+      setComplement(initTopic);
+    }
+    if (initDuration) {
+      const mins = Math.floor(Number(initDuration) / 60);
+      setPreset({ label: `${mins} min Inteligente`, minutes: mins, kind: "foco" });
+    }
+  }, [searchParams]);
 
   const { runtime, elapsedMs, start, pause, reset } =
     useTimerEngine("timer:pomodoro");
@@ -120,32 +151,48 @@ export function PomodoroPanel({
       new Notification("Timer do Concurseiro", {
         body:
           preset.kind === "foco"
-            ? "Foco concluído! Hora da pausa."
+            ? "Foco concluído! Sessão finalizada."
             : "Pausa concluída! Hora de voltar ao foco.",
       });
     }
 
     if (preset.kind === "foco") {
-      const now = new Date();
-      let finalSubject = subjectCategory === "outra" ? customSubject.trim() : subjectCategory;
-      if (!finalSubject) finalSubject = "Sem matéria definida";
-      
-      const fullSubject = complement.trim() ? `${finalSubject} (${complement.trim()})` : finalSubject;
-
-      onSessionComplete({
-        subject: fullSubject,
-        mode: "pomodoro",
-        netSeconds: preset.minutes * 60,
-        startedAt: new Date(now.getTime() - preset.minutes * 60000).toISOString(),
-        endedAt: now.toISOString(),
-      });
+      setShowEndModal(true);
     }
 
-    // Zera o acumulado após o ciclo natural terminar — evita que o tempo
-    // decorrido "vaze" para o próximo bloco (ou para depois de um reload).
     reset();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDone, notifiedForRun]);
+
+  async function handleConfirmEndSession() {
+    const now = new Date();
+    let finalSubject = subjectCategory === "outra" ? customSubject.trim() : subjectCategory;
+    if (!finalSubject) finalSubject = "Sem matéria definida";
+    
+    // Anexa as questões se houver
+    let stats = "";
+    if (totalQuestions && correctAnswers) {
+      stats = ` [${correctAnswers}/${totalQuestions} acertos]`;
+    }
+    
+    const fullSubject = complement.trim() ? `${finalSubject} (${complement.trim()})${stats}` : `${finalSubject}${stats}`;
+
+    onSessionComplete({
+      subject: fullSubject,
+      mode: "pomodoro",
+      netSeconds: preset.minutes * 60,
+      startedAt: new Date(now.getTime() - preset.minutes * 60000).toISOString(),
+      endedAt: now.toISOString(),
+    });
+
+    if (topicId) {
+      await toggleTopicCompleted(topicId, true);
+    }
+
+    setShowEndModal(false);
+    setCorrectAnswers("");
+    setTotalQuestions("");
+  }
 
   function selectPreset(next: Preset) {
     if (runtime.running) return;
@@ -323,6 +370,49 @@ export function PomodoroPanel({
           Zerar
         </button>
       </div>
+
+      {showEndModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-[#0f172a] border border-slate-700 rounded-3xl p-8 w-full max-w-sm space-y-6 shadow-2xl animate-in fade-in zoom-in-95">
+            <div className="text-center space-y-2">
+              <h3 className="text-2xl font-bold text-slate-100">Sessão Concluída!</h3>
+              <p className="text-slate-400 text-sm">Registre seu desempenho (Opcional)</p>
+            </div>
+            
+            <div className="flex gap-4">
+              <div className="space-y-1 flex-1">
+                <label className="text-xs font-semibold text-slate-400">Acertos</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={correctAnswers}
+                  onChange={(e) => setCorrectAnswers(e.target.value)}
+                  placeholder="Ex: 15"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-slate-200 outline-none focus:border-emerald-500 transition-colors"
+                />
+              </div>
+              <div className="space-y-1 flex-1">
+                <label className="text-xs font-semibold text-slate-400">Total</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={totalQuestions}
+                  onChange={(e) => setTotalQuestions(e.target.value)}
+                  placeholder="Ex: 20"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-slate-200 outline-none focus:border-indigo-500 transition-colors"
+                />
+              </div>
+            </div>
+
+            <button
+              onClick={handleConfirmEndSession}
+              className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3.5 rounded-xl shadow-[0_0_20px_rgba(79,70,229,0.3)] transition-all"
+            >
+              Salvar Sessão
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

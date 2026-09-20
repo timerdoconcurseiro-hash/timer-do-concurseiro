@@ -93,7 +93,7 @@ export default function PricingPage() {
             <ul className="mt-8 space-y-4 flex-1">
               <li className="flex gap-3 text-slate-200 text-sm font-medium"><CheckCircle2 className="text-emerald-400 shrink-0" size={20}/> Todas as ferramentas premium</li>
               <li className="flex gap-3 text-slate-200 text-sm font-medium"><CheckCircle2 className="text-emerald-400 shrink-0" size={20}/> Economia de R$ 211 no ano</li>
-              <li className="flex gap-3 text-slate-200 text-sm font-medium"><CheckCircle2 className="text-emerald-400 shrink-0" size={20}/> Acesso garantido até a prova</li>
+              <li className="flex gap-3 text-slate-200 text-sm font-medium"><CheckCircle2 className="text-emerald-400 shrink-0" size={20}/> Acesso completo por 12 meses: O parceiro ideal para o seu ciclo de aprovação</li>
               <li className="flex gap-3 text-slate-200 text-sm font-medium"><CheckCircle2 className="text-emerald-400 shrink-0" size={20}/> Suporte prioritário VIP</li>
             </ul>
 
@@ -105,16 +105,16 @@ export default function PricingPage() {
             </button>
           </div>
 
-          {/* Plano Vitalício */}
+          {/* Plano Carreira */}
           <div className="bg-slate-900/40 border border-slate-800 rounded-3xl p-8 flex flex-col backdrop-blur-sm relative transition-transform hover:scale-105">
-            <h3 className="text-xl font-medium text-amber-400">Vitalício</h3>
+            <h3 className="text-xl font-medium text-amber-400">Acesso Definitivo</h3>
             <div className="mt-4 flex items-baseline text-4xl font-bold text-white">
               <span className="text-xl text-slate-500 font-medium mr-1">R$</span>497<span className="text-xl text-slate-500 font-medium">,00</span>
             </div>
-            <p className="text-slate-400 text-sm mt-2">Ou em até 12x no cartão.</p>
+            <p className="text-slate-400 text-sm mt-2">Ou em até 12x no cartão com repasse de juros.</p>
             
             <ul className="mt-8 space-y-4 flex-1">
-              <li className="flex gap-3 text-slate-300 text-sm"><CheckCircle2 className="text-amber-500 shrink-0" size={18}/> Pagamento único, acesso eterno*</li>
+              <li className="flex gap-3 text-slate-300 text-sm"><CheckCircle2 className="text-amber-500 shrink-0" size={18}/> Pagamento único, acesso definitivo*</li>
               <li className="flex gap-3 text-slate-300 text-sm"><CheckCircle2 className="text-amber-500 shrink-0" size={18}/> Sem renovações surpresas</li>
               <li className="flex gap-3 text-slate-300 text-sm"><CheckCircle2 className="text-amber-500 shrink-0" size={18}/> Atualizações futuras inclusas</li>
               <li className="flex gap-3 text-slate-300 text-sm"><CheckCircle2 className="text-amber-500 shrink-0" size={18}/> O seu "companheiro" definitivo de estudos</li>
@@ -124,7 +124,7 @@ export default function PricingPage() {
               onClick={() => handleBuy("https://www.asaas.com/c/vv2q0x46yc7h6oq0")}
               className="mt-8 w-full bg-slate-800 hover:bg-amber-500/20 hover:text-amber-400 hover:border-amber-500/50 text-white border border-slate-700 px-6 py-4 rounded-xl font-bold transition-all text-center text-sm"
             >
-              Comprar Vitalício
+              Comprar Acesso Definitivo
             </button>
             <p className="text-center text-[10px] text-slate-600 mt-3">* Consulte os termos de uso.</p>
           </div>
@@ -137,9 +137,9 @@ export default function PricingPage() {
             <ShieldCheck size={32} className="text-emerald-400" />
           </div>
           <div>
-            <h4 className="text-lg font-bold text-white mb-1 text-center md:text-left">Risco Zero: Garantia Incondicional de 7 Dias</h4>
+            <h4 className="text-lg font-bold text-white mb-1 text-center md:text-left">Garantia Incondicional de 7 Dias</h4>
             <p className="text-sm text-slate-400 leading-relaxed text-center md:text-left">
-              Use a Inteligência Artificial, os Sons Binaurais e a Projeção de Edital no seu estudo desta semana. Se você não sentir que seu foco e controle dobraram em 7 dias, mande um único e-mail e nós devolveremos 100% do valor na hora, sem perguntas.
+              Teste a plataforma no seu ritmo e comprove a eficiência. Se não se adaptar, devolvemos seu dinheiro sem burocracia.
             </p>
           </div>
         </div>

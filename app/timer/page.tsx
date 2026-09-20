@@ -2,6 +2,7 @@ import { TimerApp } from "@/components/timer/TimerApp";
 import Link from "next/link";
 import { Sparkles } from "lucide-react";
 import { getUserProfile } from "@/app/actions";
+import { Suspense } from "react";
 
 export default async function TimerPage() {
   const profile = await getUserProfile();
@@ -17,7 +18,9 @@ export default async function TimerPage() {
           {profile?.plan === 'premium' ? 'Dashboard VIP' : 'Área VIP'}
         </Link>
       </div>
-      <TimerApp />
+      <Suspense fallback={<div className="flex flex-1 items-center justify-center text-slate-400">Carregando Timer...</div>}>
+        <TimerApp />
+      </Suspense>
     </main>
   );
 }

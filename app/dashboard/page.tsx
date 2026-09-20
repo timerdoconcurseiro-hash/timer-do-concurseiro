@@ -26,7 +26,7 @@ export default async function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#090C15] text-slate-200 p-4 md:p-8 font-sans selection:bg-indigo-500/30">
+    <div className="flex-1 flex flex-col w-full bg-[#090C15] text-slate-200 p-4 md:p-8 font-sans selection:bg-indigo-500/30 overflow-y-auto">
       {profile?.id && <PremiumObserver userId={profile.id} currentPlan={profile.plan || 'free'} />}
       
       <div className="max-w-5xl mx-auto space-y-8">

@@ -25,7 +25,7 @@ export default function TermosUsoPage() {
           <p>Para usuários do plano gratuito (não logados), os dados são salvos apenas localmente no navegador. Não nos responsabilizamos pela perda do seu histórico de tempo caso você limpe o cache do seu dispositivo ou troque de aparelho. A sincronização e proteção contra perdas está disponível apenas para usuários com conta ativa (Premium).</p>
 
           <h3 className="text-white font-semibold text-lg mt-6">5. Reembolso e Garantia</h3>
-          <p>Oferecemos uma Garantia Incondicional de 7 dias para as compras de planos Premium. Caso o usuário não esteja satisfeito com a ferramenta, poderá solicitar o reembolso integral enviando um e-mail para o suporte dentro do prazo de 7 dias após a compra.</p>
+          <p>Em estrita observância ao Art. 49 do Código de Defesa do Consumidor, garantimos o direito de arrependimento no prazo de 7 (sete) dias corridos a contar da data de contratação. Caso não se adapte, basta solicitar o estorno enviando um e-mail para o suporte dentro do prazo, e o reembolso integral será processado sem burocracia.</p>
 
           <h3 className="text-white font-semibold text-lg mt-6">6. Modificações</h3>
           <p>O Timer do Concurseiro pode revisar e alterar estes termos de serviço a qualquer momento, sem aviso prévio. Ao continuar usando o site após tais alterações, você concorda em ficar vinculado à versão atual desses termos de serviço.</p>
@@ -34,8 +34,11 @@ export default function TermosUsoPage() {
           <p>
             Os planos de assinatura (Mensal e Anual) são renovados automaticamente de acordo com seu ciclo de faturamento. O cancelamento interrompe cobranças futuras, mas não reembolsa valores de meses já iniciados (exceto no prazo da garantia de 7 dias).
             <br/><br/>
-            O termo <strong>"Acesso Vitalício" (Lifetime)</strong> refere-se ao tempo de vida útil do produto. Isso garante ao comprador acesso contínuo à plataforma sem novas mensalidades enquanto o software "Timer do Concurseiro" estiver ativo, mantido e sendo comercializado pela empresa. A empresa reserva-se o direito de descontinuar ou alterar drasticamente o serviço, seus servidores e suas integrações com Inteligências Artificiais de terceiros a qualquer momento no futuro em caso de inviabilidade comercial ou mudança de modelo de negócios, não constituindo obrigação de prestação de serviços ad aeternum (pela eternidade) ao usuário.
+            O termo <strong>"Acesso Definitivo" (Plano Carreira)</strong> refere-se ao tempo de vida útil do produto. Isso garante ao comprador acesso contínuo à plataforma sem novas mensalidades enquanto o software "Timer do Concurseiro" estiver ativo, mantido e sendo comercializado pela empresa. A empresa reserva-se o direito de descontinuar ou alterar drasticamente o serviço, seus servidores e suas integrações com Inteligências Artificiais de terceiros a qualquer momento no futuro em caso de inviabilidade comercial ou mudança de modelo de negócios, não constituindo obrigação de prestação de serviços ad aeternum (pela eternidade) ao usuário.
           </p>
+
+          <h3 className="text-white font-semibold text-lg mt-6">8. Uso Aceitável (Fair Use) das Ferramentas de I.A.</h3>
+          <p>A utilização das funcionalidades de Inteligência Artificial deve ocorrer em volumes razoáveis para o estudo pessoal. O sistema impõe limites técnicos de requisições a fim de garantir estabilidade e prevenir abusos de servidor. É terminantemente proibido o uso de automações, bots ou compartilhamento de contas para exploração comercial das APIs integradas. Casos de abuso podem levar ao bloqueio temporário ou banimento definitivo da conta, sem direito a reembolso além dos primeiros 7 dias.</p>
         </div>
       </div>
     </div>

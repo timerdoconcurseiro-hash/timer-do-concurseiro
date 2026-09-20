@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Target, Timer, BarChart3, Cloud, Save, Headphones } from 'lucide-react';
+import { ArrowLeft, Target, Timer, BarChart3, Cloud, Save, Headphones, Brain, RotateCw } from 'lucide-react';
 
 export default function ComoUsarPage() {
   return (
@@ -81,13 +81,16 @@ export default function ComoUsarPage() {
             </p>
             <ul className="space-y-3 mt-4">
               <li className="flex items-center justify-center md:justify-start gap-3 text-sm text-slate-300">
-                <BarChart3 size={18} className="text-cyan-400" /> <strong>Gráfico de Alocação:</strong> Veja onde você investe mais tempo.
+                <Target size={18} className="text-emerald-400" /> <strong>Edital Verticalizado Inteligente:</strong> Nossa I.A mapeia seu edital e gera missões diárias de estudo.
               </li>
               <li className="flex items-center justify-center md:justify-start gap-3 text-sm text-slate-300">
-                <Target size={18} className="text-emerald-400" /> <strong>Ciclo de IA:</strong> O app diz a próxima matéria a revisar.
+                <Brain size={18} className="text-purple-400" /> <strong>Sala de Leitura IA + Flashcards:</strong> Cole seus textos e a IA cria Flashcards para você.
               </li>
               <li className="flex items-center justify-center md:justify-start gap-3 text-sm text-slate-300">
-                <Headphones size={18} className="text-amber-400" /> <strong>Foco Profundo:</strong> Sons binaurais exclusivos para concentrar.
+                <RotateCw size={18} className="text-fuchsia-400" /> <strong>Smart Cycle (Algoritmo SM-2):</strong> Um módulo de revisão em cards 3D que sabe exatamente quando você vai esquecer o conteúdo.
+              </li>
+              <li className="flex items-center justify-center md:justify-start gap-3 text-sm text-slate-300">
+                <Headphones size={18} className="text-amber-400" /> <strong>Sintetizador Binaural:</strong> Ondas Delta, Theta e Ruído Verde nativos para foco extremo.
               </li>
             </ul>
           </div>

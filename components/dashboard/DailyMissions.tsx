@@ -74,7 +74,7 @@ export function DailyMissions({ initialData }: { initialData: any[] }) {
 
               <div className="flex flex-col gap-2">
                 <Link 
-                  href="/timer"
+                  href={`/timer?subject=${encodeURIComponent(topic.subjectName)}&topic=${encodeURIComponent(topic.name)}&topicId=${topic.id}&duration=4500`}
                   className="bg-slate-800 hover:bg-emerald-500/20 hover:text-emerald-400 text-slate-300 w-10 h-10 rounded-full flex items-center justify-center transition-all"
                   title="Iniciar Timer para esta missão"
                 >

@@ -28,14 +28,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="pt-BR"
-      className={`${spaceGrotesk.variable} ${inter.variable} h-full antialiased`}
+      className={`${spaceGrotesk.variable} ${inter.variable} min-h-screen antialiased`}
       suppressHydrationWarning
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
-      <body className="min-h-full flex flex-col bg-app-bg text-text-primary font-sans">
-        <div className="flex-1 flex flex-col">
+      <body className="min-h-screen flex flex-col bg-app-bg text-text-primary font-sans overflow-y-auto">
+        <div className="flex-1 flex flex-col w-full">
           {children}
         </div>
         <Footer />
