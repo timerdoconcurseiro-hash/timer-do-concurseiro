@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { getHeatmapData } from "@/app/actions";
 
 const INTENSITY_COLORS = [
   "bg-slate-800/50 text-slate-500", // 0 (Zero)
@@ -31,64 +32,77 @@ export function ConsistencyHeatmap() {
   }, [selectedDayInfo]);
 
   useEffect(() => {
-    const now = new Date();
-    const cYear = now.getFullYear();
-    const cMonth = now.getMonth();
-    const cDay = now.getDate();
+    const loadData = async () => {
+      const now = new Date();
+      const cYear = now.getFullYear();
+      const cMonth = now.getMonth();
+      const cDay = now.getDate();
 
-    setCurrentDate({
-      day: cDay,
-      month: cMonth,
-      year: cYear,
-      monthName: MONTHS[cMonth]
-    });
+      setCurrentDate({
+        day: cDay,
+        month: cMonth,
+        year: cYear,
+        monthName: MONTHS[cMonth]
+      });
 
-    const daysInMonth = new Date(cYear, cMonth + 1, 0).getDate();
-    const firstDayOfWeek = new Date(cYear, cMonth, 1).getDay();
+      const daysInMonth = new Date(cYear, cMonth + 1, 0).getDate();
+      const firstDayOfWeek = new Date(cYear, cMonth, 1).getDay();
 
-    const blanks = Array.from({ length: firstDayOfWeek }).map(() => null);
+      const blanks = Array.from({ length: firstDayOfWeek }).map(() => null);
+      
+      const rawSessions = await getHeatmapData();
+      
+      // Group sessions by day
+      const sessionsByDay: Record<number, { totalSeconds: number; details: { subject: string, time: string }[] }> = {};
+      
+      rawSessions.forEach(session => {
+        const sessionDate = new Date(session.finished_at);
+        if (sessionDate.getFullYear() === cYear && sessionDate.getMonth() === cMonth) {
+          const d = sessionDate.getDate();
+          if (!sessionsByDay[d]) {
+            sessionsByDay[d] = { totalSeconds: 0, details: [] };
+          }
+          sessionsByDay[d].totalSeconds += session.net_seconds;
+          
+          const hours = Math.floor(session.net_seconds / 3600);
+          const mins = Math.floor((session.net_seconds % 3600) / 60);
+          const timeStr = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+          
+          sessionsByDay[d].details.push({ subject: session.subject, time: timeStr });
+        }
+      });
+
+      const days = Array.from({ length: daysInMonth }).map((_, i) => {
+        const dayNumber = i + 1;
+        
+        if (dayNumber > cDay) return { day: dayNumber, intensity: 0, isFuture: true, details: [] };
+
+        const dayData = sessionsByDay[dayNumber];
+        let intensity = 0;
+        let details: any[] = [];
+
+        if (dayData) {
+          const hours = dayData.totalSeconds / 3600;
+          if (hours > 0 && hours < 2) intensity = 1;
+          else if (hours >= 2 && hours < 4) intensity = 2;
+          else if (hours >= 4 && hours < 6) intensity = 3;
+          else if (hours >= 6) intensity = 4;
+          details = dayData.details;
+        }
+        
+        return { day: dayNumber, intensity, isFuture: false, details };
+      });
+
+      setCalendarData([...blanks, ...days]);
+    };
     
-    // Gerando mock de estudo para o mês atual
-    const days = Array.from({ length: daysInMonth }).map((_, i) => {
-      const dayNumber = i + 1;
-      
-      if (dayNumber > cDay) return { day: dayNumber, intensity: 0, isFuture: true, details: [] };
-
-      const rand = Math.random();
-      let intensity = 0; 
-      let details: { subject: string, time: string }[] = [];
-
-      if (rand > 0.3 && rand < 0.6) {
-        intensity = 1;
-        details = [{ subject: "Língua Portuguesa", time: "1h 15m" }];
-      } else if (rand >= 0.6 && rand < 0.8) {
-        intensity = 2;
-        details = [{ subject: "Direito Administrativo", time: "2h 30m" }];
-      } else if (rand >= 0.8 && rand < 0.95) {
-        intensity = 3;
-        details = [
-          { subject: "Direito Constitucional", time: "2h 00m" },
-          { subject: "Raciocínio Lógico", time: "1h 45m" }
-        ];
-      } else if (rand >= 0.95) {
-        intensity = 4;
-        details = [
-          { subject: "Língua Portuguesa", time: "2h 30m" },
-          { subject: "Informática", time: "1h 30m" },
-          { subject: "Redação", time: "1h 00m" }
-        ];
-      }
-      
-      return { day: dayNumber, intensity, isFuture: false, details };
-    });
-
-    setCalendarData([...blanks, ...days]);
+    loadData();
   }, []);
 
-  if (calendarData.length === 0) return null; // loading state avoiding hydration mismatch
+  if (calendarData.length === 0) return null;
 
   return (
-    <div className="flex flex-col w-full max-w-md mx-auto relative">
+    <div className="flex flex-col w-full max-w-md mx-auto relative h-full py-4 overflow-y-auto">
       
       {/* MODAL DE DETALHES DO DIA */}
       {selectedDayInfo && (
@@ -127,14 +141,13 @@ export function ConsistencyHeatmap() {
         </div>
       )}
 
-      <div className="flex justify-between items-center mb-4 px-2">
+      <div className="flex justify-between items-center mb-4 px-2 shrink-0">
         <h4 className="text-lg font-semibold text-white tracking-wide">
           {currentDate.monthName} <span className="text-slate-500 font-normal">{currentDate.year}</span>
         </h4>
       </div>
 
-      {/* Cabeçalho dos dias da semana */}
-      <div className="grid grid-cols-7 gap-2 mb-2">
+      <div className="grid grid-cols-7 gap-2 mb-2 shrink-0">
         {WEEKDAYS.map((day, i) => (
           <div key={i} className="text-center text-[10px] font-bold text-slate-500 uppercase tracking-wider">
             {day}
@@ -142,15 +155,13 @@ export function ConsistencyHeatmap() {
         ))}
       </div>
 
-      {/* Grid do Calendário */}
-      <div className="grid grid-cols-7 gap-2">
+      <div className="grid grid-cols-7 gap-2 shrink-0">
         {calendarData.map((item, index) => {
           if (!item) {
             return <div key={index} className="aspect-square rounded-lg opacity-0" />;
           }
           
           const isToday = item.day === currentDate.day;
-          // Estilo extra para destacar o dia de hoje
           const todayStyles = isToday ? "ring-2 ring-amber-500 ring-offset-2 ring-offset-slate-900 z-10 scale-105" : "";
 
           return (
@@ -171,8 +182,7 @@ export function ConsistencyHeatmap() {
         })}
       </div>
       
-      {/* Legenda Discreta e Explicativa */}
-      <div className="flex justify-center items-center gap-4 mt-6 text-[10px] text-slate-400 bg-slate-900/40 py-2 px-4 rounded-lg w-fit mx-auto border border-slate-800">
+      <div className="flex justify-center items-center gap-4 mt-6 text-[10px] text-slate-400 bg-slate-900/40 py-2 px-4 rounded-lg w-fit mx-auto border border-slate-800 shrink-0">
         <div className="flex items-center gap-1.5" title="Não estudou">
           <div className="w-2.5 h-2.5 rounded-sm bg-slate-800/50 border border-slate-700" /> <span>Zero</span>
         </div>

@@ -31,8 +31,8 @@ export default async function VIPPage() {
   const { data: chartData } = await getSubjectAnalytics();
 
   return (
-    <div className="flex-1 flex flex-col w-full bg-[#090C15] text-slate-200 p-4 md:p-8 font-sans selection:bg-amber-500/30 overflow-y-auto">
-      <div className="max-w-6xl w-full mx-auto space-y-8">
+    <div className="min-h-screen w-full bg-[#090C15] text-slate-200 p-4 md:p-8 font-sans selection:bg-amber-500/30 overflow-y-auto">
+      <div className="max-w-6xl w-full mx-auto space-y-8 pb-12">
         
         {/* Header - VIP */}
         <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-4 border-b border-slate-800/60">

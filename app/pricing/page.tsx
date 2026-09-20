@@ -107,7 +107,7 @@ export default function PricingPage() {
 
           {/* Plano Carreira */}
           <div className="bg-slate-900/40 border border-slate-800 rounded-3xl p-8 flex flex-col backdrop-blur-sm relative transition-transform hover:scale-105">
-            <h3 className="text-xl font-medium text-amber-400">Acesso Definitivo</h3>
+            <h3 className="text-xl font-medium text-amber-400">Plano Carreira</h3>
             <div className="mt-4 flex items-baseline text-4xl font-bold text-white">
               <span className="text-xl text-slate-500 font-medium mr-1">R$</span>497<span className="text-xl text-slate-500 font-medium">,00</span>
             </div>
@@ -124,9 +124,9 @@ export default function PricingPage() {
               onClick={() => handleBuy("https://www.asaas.com/c/vv2q0x46yc7h6oq0")}
               className="mt-8 w-full bg-slate-800 hover:bg-amber-500/20 hover:text-amber-400 hover:border-amber-500/50 text-white border border-slate-700 px-6 py-4 rounded-xl font-bold transition-all text-center text-sm"
             >
-              Comprar Acesso Definitivo
+              Comprar Plano Carreira
             </button>
-            <p className="text-center text-[10px] text-slate-600 mt-3">* Consulte os termos de uso.</p>
+            <p className="text-center text-[10px] text-slate-600 mt-3">* Consulte a Cláusula de Uso Aceitável (Fair Use).</p>
           </div>
 
         </div>
@@ -137,9 +137,9 @@ export default function PricingPage() {
             <ShieldCheck size={32} className="text-emerald-400" />
           </div>
           <div>
-            <h4 className="text-lg font-bold text-white mb-1 text-center md:text-left">Garantia Incondicional de 7 Dias</h4>
+            <h4 className="text-lg font-bold text-white mb-1 text-center md:text-left">Garantia Incondicional de 7 Dias (Art. 49 CDC)</h4>
             <p className="text-sm text-slate-400 leading-relaxed text-center md:text-left">
-              Teste a plataforma no seu ritmo e comprove a eficiência. Se não se adaptar, devolvemos seu dinheiro sem burocracia.
+              Teste a plataforma no seu ritmo e comprove a eficiência. Se não se adaptar, devolvemos seu dinheiro sem burocracia, conforme direito de arrependimento (Art. 49 do Código de Defesa do Consumidor). Importante: a geração por IA é sujeita a uma Política de Uso Aceitável (Fair Use) para evitar abusos.
             </p>
           </div>
         </div>

@@ -126,6 +126,20 @@ export async function getSubjectAnalytics() {
   return { success: true, data: chartData };
 }
 
+export async function getHeatmapData() {
+  const supabase = await createClient();
+  const { data: authData } = await supabase.auth.getUser();
+  if (!authData.user) return [];
+
+  const { data, error } = await supabase
+    .from("study_sessions")
+    .select("finished_at, net_seconds, subject")
+    .eq("user_id", authData.user.id);
+
+  if (error || !data) return [];
+  return data;
+}
+
 export async function getUserProfile() {
   const supabase = await createClient();
   const { data: authData } = await supabase.auth.getUser();
@@ -137,6 +151,22 @@ export async function getUserProfile() {
     .eq("id", authData.user.id)
     .single();
     
+  return data;
+}
+
+export async function getLastStudySession() {
+  const supabase = await createClient();
+  const { data: authData } = await supabase.auth.getUser();
+  if (!authData.user) return null;
+
+  const { data } = await supabase
+    .from("study_sessions")
+    .select("subject, topic")
+    .eq("user_id", authData.user.id)
+    .order("finished_at", { ascending: false })
+    .limit(1)
+    .single();
+
   return data;
 }
 

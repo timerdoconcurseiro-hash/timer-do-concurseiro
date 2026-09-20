@@ -38,7 +38,7 @@ export async function POST(request: Request) {
 
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ 
-      model: 'gemini-flash-latest',
+      model: 'gemini-1.5-flash',
       generationConfig: { responseMimeType: "application/json" }
     });
 
@@ -65,7 +65,7 @@ export async function POST(request: Request) {
     Sua tarefa é fatiar esse conteúdo em Disciplinas (Subjects) e seus respectivos Tópicos (Topics).
     Além disso, faça uma estimativa de quantas horas líquidas um aluno médio precisaria para estudar cada Disciplina inteira.
 
-    Importante: Utilize "Prática Intercalada" (Interleaving). Nunca sugira mais de um bloco da mesma disciplina no mesmo dia. Aplique a regra 80/20 e alterne entre disciplinas diferentes para maximizar a retenção. Na estrutura de Tópicos gerada, caso necessário, distribua de forma que a IA ou o sistema possam intercalá-los adequadamente.
+    Importante: Utilize "Prática Intercalada" (Interleaving). Nunca sugira blocos repetidos da mesma disciplina em sequência no mesmo dia. Force a aplicação da regra 80/20 e intercalação de matérias para maximizar a retenção. Na estrutura de Tópicos gerada, caso necessário, distribua de forma que a IA ou o sistema possam intercalá-los adequadamente.
 
     Retorne APENAS um objeto JSON válido, sem texto adicional, no seguinte formato:
     {

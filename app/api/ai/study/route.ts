@@ -38,17 +38,20 @@ export async function POST(request: Request) {
 
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ 
-      model: 'gemini-flash-latest',
+      model: 'gemini-1.5-flash',
       generationConfig: { responseMimeType: "application/json" }
     });
 
     const prompt = `
     Você é um professor especialista em preparação para concursos públicos.
-    O aluno enviou um trecho de material de estudo (lei seca, doutrina ou pdf).
+    O aluno enviou um trecho de material de estudo e os dados da última sessão estudada:
+    Disciplina: ${textContext.disciplina || "Não informada"}
+    Assunto/Complemento: ${textContext.assunto_complemento || "Não informado"}
     
     Faça duas coisas:
     1. Crie um resumo ultra-focado (bullet points) com os conceitos principais.
-    2. Crie de 3 a 5 Flashcards (Pergunta e Resposta) cruciais sobre esse texto para que o aluno não esqueça.
+    2. Crie de 3 a 5 Flashcards (Pergunta e Resposta) cruciais sobre esse tema recém-estudado para que o aluno não esqueça.
+    Atenção: Não faça perguntas genéricas, as perguntas e respostas devem ser ESTRITAMENTE sobre o tema recém-estudado.
 
     Retorne APENAS um objeto JSON válido, sem nenhum texto adicional, com este exato formato:
     {
@@ -58,8 +61,8 @@ export async function POST(request: Request) {
       ]
     }
 
-    Texto do aluno:
-    ${textContext}
+    Texto/Contexto enviado pelo aluno:
+    ${textContext.texto || textContext}
     `;
 
     const result = await model.generateContent(prompt);
