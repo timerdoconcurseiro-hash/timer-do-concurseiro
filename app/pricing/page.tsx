@@ -4,13 +4,18 @@ import React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { CheckCircle2, ShieldCheck, Zap, ArrowLeft } from "lucide-react";
+import { CheckCircle2, ShieldCheck, Zap, ArrowLeft, Lock } from "lucide-react";
 import { VerifyPaymentButton } from "@/components/dashboard/VerifyPaymentButton";
 
 export default function PricingPage() {
   const router = useRouter();
+  
+  // Flag para travar as vendas durante o beta/testes
+  const isBeta = true;
 
   const handleBuy = async (url: string) => {
+    if (isBeta) return; // Segurança extra caso o usuário remova o CSS de pointer-events
+
     const supabase = createClient();
     const { data: { session } } = await supabase.auth.getSession();
     
@@ -41,7 +46,10 @@ export default function PricingPage() {
           <h1 className="text-4xl md:text-5xl font-light text-white tracking-tight">
             Estude com <span className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">Inteligência</span>
           </h1>
-          <p className="text-slate-400 max-w-2xl mx-auto text-lg">
+          <p className="text-amber-400 max-w-2xl mx-auto text-lg font-medium">
+            Conheça nossas assinaturas - Lançamento em breve!
+          </p>
+          <p className="text-slate-400 max-w-2xl mx-auto text-md">
             Desbloqueie projeções de edital, ciclos sugeridos por IA e sons binaurais. Foque no que importa: a sua aprovação.
           </p>
         </div>
@@ -67,8 +75,11 @@ export default function PricingPage() {
 
             <button 
               onClick={() => handleBuy("https://www.asaas.com/c/yynfh4qaq959g46f")}
-              className="mt-8 w-full bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 px-6 py-4 rounded-xl font-bold transition-all text-center text-sm"
+              disabled={isBeta}
+              className={`mt-8 w-full px-6 py-4 rounded-xl font-bold transition-all text-center text-sm flex items-center justify-center gap-2
+                ${isBeta ? "bg-slate-800 text-slate-400 opacity-50 cursor-not-allowed pointer-events-none border border-slate-700" : "bg-slate-800 hover:bg-slate-700 text-white border border-slate-700"}`}
             >
+              {isBeta && <Lock size={16} />}
               Assinar Mensal
             </button>
           </div>
@@ -99,8 +110,11 @@ export default function PricingPage() {
 
             <button 
               onClick={() => handleBuy("https://www.asaas.com/c/jqvvta85thlc1civ")}
-              className="mt-8 w-full bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-4 rounded-xl font-bold transition-all transform hover:scale-105 shadow-[0_0_20px_rgba(79,70,229,0.3)] text-center text-lg"
+              disabled={isBeta}
+              className={`mt-8 w-full px-6 py-4 rounded-xl font-bold transition-all text-center text-lg flex items-center justify-center gap-2
+                ${isBeta ? "bg-indigo-900/50 text-indigo-300 opacity-50 cursor-not-allowed pointer-events-none" : "bg-indigo-600 hover:bg-indigo-500 text-white transform hover:scale-105 shadow-[0_0_20px_rgba(79,70,229,0.3)]"}`}
             >
+              {isBeta && <Lock size={18} />}
               Garantir Plano Anual
             </button>
           </div>
@@ -122,8 +136,11 @@ export default function PricingPage() {
 
             <button 
               onClick={() => handleBuy("https://www.asaas.com/c/vv2q0x46yc7h6oq0")}
-              className="mt-8 w-full bg-slate-800 hover:bg-amber-500/20 hover:text-amber-400 hover:border-amber-500/50 text-white border border-slate-700 px-6 py-4 rounded-xl font-bold transition-all text-center text-sm"
+              disabled={isBeta}
+              className={`mt-8 w-full px-6 py-4 rounded-xl font-bold transition-all text-center text-sm flex items-center justify-center gap-2
+                ${isBeta ? "bg-slate-800 text-slate-400 opacity-50 cursor-not-allowed pointer-events-none border border-slate-700" : "bg-slate-800 hover:bg-amber-500/20 hover:text-amber-400 hover:border-amber-500/50 text-white border border-slate-700"}`}
             >
+              {isBeta && <Lock size={16} />}
               Comprar Plano Carreira
             </button>
             <p className="text-center text-[10px] text-slate-600 mt-3">* Consulte a Cláusula de Uso Aceitável (Fair Use).</p>
