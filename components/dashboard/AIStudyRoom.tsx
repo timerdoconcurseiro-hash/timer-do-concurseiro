@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Brain, FileText, Send, Loader2, Sparkles, CheckCircle2, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { saveAIFlashcards, getLastStudySession } from "@/app/actions";
 import { useRouter, useSearchParams } from "next/navigation";
+import { FlashcardViewer } from "./FlashcardViewer";
 
 export function AIStudyRoom() {
   const router = useRouter();
@@ -87,10 +88,20 @@ export function AIStudyRoom() {
   const handleSaveFlashcards = async () => {
     if (!result) return;
     try {
-      const res = await saveAIFlashcards(result.flashcards, subject);
-      if (!res.success) throw new Error(res.error);
+      const newDeck = {
+        id: Date.now(),
+        titulo: subject || "Novo Deck",
+        anotacao: "",
+        cards: result.flashcards
+      };
+      
+      const stored = window.localStorage.getItem('@timer:savedDecks');
+      const decks = stored ? JSON.parse(stored) : [];
+      decks.push(newDeck);
+      window.localStorage.setItem('@timer:savedDecks', JSON.stringify(decks));
+      
       setIsSaved(true);
-      router.refresh();
+      window.dispatchEvent(new Event('savedDecksUpdated'));
     } catch (err: any) {
       alert("Erro ao salvar: " + err.message);
     }
@@ -98,22 +109,7 @@ export function AIStudyRoom() {
 
   const openFocusMode = (index: number) => {
     setCurrentCardIndex(index);
-    setIsFlipped(false);
     setFocusModeOpen(true);
-  };
-
-  const handleNext = () => {
-    setIsFlipped(false);
-    if (result && currentCardIndex < result.flashcards.length - 1) {
-      setCurrentCardIndex(prev => prev + 1);
-    }
-  };
-
-  const handlePrev = () => {
-    setIsFlipped(false);
-    if (currentCardIndex > 0) {
-      setCurrentCardIndex(prev => prev - 1);
-    }
   };
 
   return (
@@ -194,9 +190,9 @@ export function AIStudyRoom() {
               }`}
             >
               {isSaved ? (
-                <><CheckCircle2 size={18} /> Enviados para o Smart Cycle!</>
+                <><CheckCircle2 size={18} /> Deck salvo com sucesso!</>
               ) : (
-                <><Send size={18} /> Enviar Flashcards para o Meu Ciclo de Revisão</>
+                <><Send size={18} /> Salvar Meus Flashcards</>
               )}
             </button>
           </div>
@@ -205,70 +201,11 @@ export function AIStudyRoom() {
       )}
 
       {focusModeOpen && result && (
-        <div className="fixed inset-0 z-50 bg-slate-950/90 flex items-center justify-center p-4">
-          <div className="w-full max-w-2xl flex flex-col items-center">
-            <button 
-              onClick={() => setFocusModeOpen(false)}
-              className="absolute top-6 right-6 p-2 bg-slate-800 hover:bg-slate-700 text-white rounded-full transition-colors"
-            >
-              <X size={24} />
-            </button>
-            
-            <h2 className="text-xl font-bold text-emerald-400 mb-8">Modo Foco - Flashcard {currentCardIndex + 1}/{result.flashcards.length}</h2>
-
-            <div className="w-full aspect-[4/3] md:aspect-[16/9] perspective-1000 mb-8">
-              <div 
-                className={`relative w-full h-full transition-transform duration-500 transform-style-3d cursor-pointer ${isFlipped ? 'rotate-y-180' : ''}`}
-                onClick={() => setIsFlipped(!isFlipped)}
-              >
-                {/* Front (Question) */}
-                <div className="absolute inset-0 backface-hidden bg-slate-900 border-2 border-slate-700 rounded-2xl p-6 md:p-8 flex flex-col h-full shadow-2xl">
-                  <h3 className="text-slate-400 mb-4 uppercase tracking-widest text-sm font-semibold text-center shrink-0">Pergunta</h3>
-                  <div className="flex-1 overflow-y-auto w-full flex items-center justify-center">
-                    <p className="text-white text-center break-words" style={{ fontSize: 'clamp(1rem, 4vw, 1.5rem)' }}>
-                      {result.flashcards[currentCardIndex].question}
-                    </p>
-                  </div>
-                  <p className="text-slate-500 text-sm animate-pulse text-center mt-auto pt-4 shrink-0">Clique para Virar</p>
-                </div>
-
-                {/* Back (Answer) */}
-                <div className="absolute inset-0 backface-hidden bg-emerald-900 border-2 border-emerald-600 rounded-2xl p-6 md:p-8 flex flex-col h-full shadow-2xl rotate-y-180">
-                  <h3 className="text-emerald-300 mb-4 uppercase tracking-widest text-sm font-semibold text-center shrink-0">Resposta</h3>
-                  <div className="flex-1 overflow-y-auto w-full flex items-center justify-center">
-                    <p className="text-white text-center break-words" style={{ fontSize: 'clamp(1rem, 4vw, 1.5rem)' }}>
-                      {result.flashcards[currentCardIndex].answer}
-                    </p>
-                  </div>
-                  <p className="text-emerald-400 text-sm text-center mt-auto pt-4 shrink-0">Resposta Completa</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-4 w-full justify-between">
-              <button 
-                onClick={handlePrev}
-                disabled={currentCardIndex === 0}
-                className="flex items-center gap-2 px-6 py-3 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:hover:bg-slate-800 text-white rounded-lg transition-colors"
-              >
-                <ChevronLeft size={20} /> Anterior
-              </button>
-              <button 
-                onClick={() => setIsFlipped(!isFlipped)}
-                className="flex-1 max-w-[200px] px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-bold rounded-lg transition-colors text-center"
-              >
-                Virar
-              </button>
-              <button 
-                onClick={handleNext}
-                disabled={currentCardIndex === result.flashcards.length - 1}
-                className="flex items-center gap-2 px-6 py-3 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:hover:bg-slate-800 text-white rounded-lg transition-colors"
-              >
-                Próximo <ChevronRight size={20} />
-              </button>
-            </div>
-          </div>
-        </div>
+        <FlashcardViewer 
+          cards={result.flashcards} 
+          title="Pré-visualização" 
+          onClose={() => setFocusModeOpen(false)} 
+        />
       )}
     </div>
   );

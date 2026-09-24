@@ -1,15 +1,16 @@
 import React from "react";
-import { BrainCircuit, Target, Headphones, Sparkles, Lock, ArrowLeft, BarChart3, Calendar } from "lucide-react";
-import { SmartCycle } from "@/components/dashboard/SmartCycle";
+import { BrainCircuit, Target, Headphones, Sparkles, Lock, ArrowLeft, BarChart3, Calendar, Radar, Book } from "lucide-react";
 import { EditalVerticalizado } from "@/components/dashboard/EditalVerticalizado";
 import { AmbientSounds } from "@/components/dashboard/AmbientSounds";
 import { FocusWrapper } from "@/components/dashboard/FocusWrapper";
 import { AIStudyRoom } from "@/components/dashboard/AIStudyRoom";
 import { DailyMissions } from "@/components/dashboard/DailyMissions";
+import { RadarNegligencia } from "@/components/dashboard/RadarNegligencia";
+import { CaixaDeFlashcards } from "@/components/dashboard/CaixaDeFlashcards";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { getUserProfile, getEditalVerticalizado, getTodayReviews, getSubjectAnalytics } from "@/app/actions";
+import { getUserProfile, getEditalVerticalizado, getSubjectAnalytics } from "@/app/actions";
 import { SubjectPieChart } from "@/components/dashboard/SubjectPieChart";
 import { ConsistencyHeatmap } from "@/components/dashboard/ConsistencyHeatmap";
 
@@ -27,8 +28,6 @@ export default async function VIPPage() {
   }
 
   const { data: editalData } = await getEditalVerticalizado();
-  const rawTodayReviews = await getTodayReviews();
-  const todayReviews = rawTodayReviews.filter((item: any) => item.subject && item.subject !== "Sem matéria definida");
   const { data: chartData } = await getSubjectAnalytics();
 
   return (
@@ -101,8 +100,12 @@ export default async function VIPPage() {
               <DailyMissions initialData={editalData || []} />
             </FocusWrapper>
 
-            <FocusWrapper title={<><BrainCircuit size={16} className="text-fuchsia-400" /> Smart Cycle (Revisão Espaçada)</>}>
-              <SmartCycle reviews={todayReviews} />
+            <FocusWrapper title={<><Radar size={16} className="text-red-400" /> Radar de Negligência</>}>
+              <RadarNegligencia />
+            </FocusWrapper>
+
+            <FocusWrapper title={<><Book size={16} className="text-fuchsia-400" /> Caixa de Flashcards</>}>
+              <CaixaDeFlashcards />
             </FocusWrapper>
           </div>
           
