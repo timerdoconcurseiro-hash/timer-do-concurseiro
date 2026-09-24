@@ -27,7 +27,8 @@ export default async function VIPPage() {
   }
 
   const { data: editalData } = await getEditalVerticalizado();
-  const todayReviews = await getTodayReviews();
+  const rawTodayReviews = await getTodayReviews();
+  const todayReviews = rawTodayReviews.filter((item: any) => item.subject && item.subject !== "Sem matéria definida");
   const { data: chartData } = await getSubjectAnalytics();
 
   return (

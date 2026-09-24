@@ -145,56 +145,84 @@ export function SmartCycle({ reviews }: { reviews: any[] }) {
               style={{ transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}
             >
               {/* Frente - Pergunta */}
-              <div className="absolute inset-0 [backface-visibility:hidden] bg-slate-900 border-2 border-slate-700 hover:border-fuchsia-500/50 rounded-3xl p-8 md:p-12 shadow-2xl flex flex-col items-center justify-center text-center transition-colors">
-                <span className="absolute top-6 left-6 text-fuchsia-400/50 font-bold uppercase tracking-widest text-sm">Pergunta</span>
-                <p className="text-2xl md:text-4xl font-medium text-slate-200 leading-tight">
-                  {reviews[currentIndex].topic || 'Qual é o conceito geral de ' + reviews[currentIndex].subject + '?'}
-                </p>
-                <div className="absolute bottom-6 flex items-center gap-2 text-slate-500 text-sm">
-                  <RotateCw size={14} /> Clique para virar
+              <div className="flip-card-front bg-slate-900 border-2 border-slate-700 hover:border-fuchsia-500/50 rounded-3xl p-6 md:p-8 shadow-2xl flex flex-col transition-colors">
+                <div className="text-fuchsia-400/50 font-bold uppercase tracking-widest text-sm mb-4 text-center">Pergunta</div>
+                
+                <div className="card-text-container custom-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '10px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <p className="font-medium text-slate-200 leading-tight text-center" style={{ fontSize: 'clamp(1rem, 2.5vw, 1.5rem)' }}>
+                    {reviews[currentIndex].topic || 'Qual é o conceito geral de ' + reviews[currentIndex].subject + '?'}
+                  </p>
+                </div>
+
+                <div className="card-actions flex items-center justify-between w-full" style={{ marginTop: 'auto', minHeight: '60px', zIndex: 10 }}>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); handlePrev(); }}
+                    disabled={currentIndex === 0}
+                    className="bg-slate-800 hover:bg-slate-700 disabled:opacity-30 text-white p-3 rounded-full transition-all"
+                  >
+                    <ChevronLeft size={20} />
+                  </button>
+
+                  <div className="flex items-center gap-2 text-slate-400 text-sm font-medium">
+                    <RotateCw size={16} /> Virar
+                  </div>
+
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); handleNext(); }}
+                    disabled={currentIndex === reviews.length - 1}
+                    className="bg-slate-800 hover:bg-slate-700 disabled:opacity-30 text-white p-3 rounded-full transition-all"
+                  >
+                    <ChevronRight size={20} />
+                  </button>
                 </div>
               </div>
 
               {/* Verso - Resposta */}
-              <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] bg-gradient-to-br from-fuchsia-900/40 to-slate-900 border-2 border-fuchsia-500/50 rounded-3xl p-8 md:p-12 shadow-2xl flex flex-col items-center justify-center text-center overflow-y-auto custom-scrollbar">
-                <span className="absolute top-6 left-6 text-fuchsia-400 font-bold uppercase tracking-widest text-sm">Resposta</span>
-                <p className="text-xl md:text-2xl text-fuchsia-50 leading-relaxed max-w-2xl whitespace-pre-wrap">
-                  {reviews[currentIndex].notes || 'Tente relembrar os principais pontos estudados sobre esta matéria.'}
-                </p>
-                <button 
-                  onClick={(e) => handleComplete(reviews[currentIndex].id, e)}
-                  disabled={loadingId === reviews[currentIndex].id}
-                  className="absolute bottom-6 right-6 bg-fuchsia-600 hover:bg-fuchsia-500 text-white px-6 py-2.5 rounded-full font-bold shadow-lg flex items-center gap-2 transition-transform hover:scale-105"
-                >
-                  {loadingId === reviews[currentIndex].id ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle2 size={18} />}
-                  Lembrei!
-                </button>
+              <div className="flip-card-back bg-gradient-to-br from-fuchsia-900/40 to-slate-900 border-2 border-fuchsia-500/50 rounded-3xl p-6 md:p-8 shadow-2xl flex flex-col transition-colors">
+                <div className="text-fuchsia-400 font-bold uppercase tracking-widest text-sm mb-4 text-center">Resposta</div>
+                
+                <div className="card-text-container custom-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '10px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <p className="text-fuchsia-50 leading-relaxed max-w-2xl whitespace-pre-wrap text-center" style={{ fontSize: 'clamp(1rem, 2.5vw, 1.5rem)' }}>
+                    {reviews[currentIndex].notes || 'Tente relembrar os principais pontos estudados sobre esta matéria.'}
+                  </p>
+                </div>
+
+                <div className="card-actions flex items-center justify-between w-full" style={{ marginTop: 'auto', minHeight: '60px', zIndex: 10 }}>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); handlePrev(); }}
+                    disabled={currentIndex === 0}
+                    className="bg-slate-800 hover:bg-slate-700 disabled:opacity-30 text-white p-3 rounded-full transition-all"
+                  >
+                    <ChevronLeft size={20} />
+                  </button>
+
+                  <button 
+                    onClick={(e) => handleComplete(reviews[currentIndex].id, e)}
+                    disabled={loadingId === reviews[currentIndex].id}
+                    className="bg-fuchsia-600 hover:bg-fuchsia-500 text-white px-6 py-2.5 rounded-full font-bold shadow-lg flex items-center gap-2 transition-transform hover:scale-105"
+                  >
+                    {loadingId === reviews[currentIndex].id ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle2 size={18} />}
+                    Lembrei!
+                  </button>
+
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); handleNext(); }}
+                    disabled={currentIndex === reviews.length - 1}
+                    className="bg-slate-800 hover:bg-slate-700 disabled:opacity-30 text-white p-3 rounded-full transition-all"
+                  >
+                    <ChevronRight size={20} />
+                  </button>
+                </div>
               </div>
             </div>
             
-            {/* Controles de Navegação */}
-            <div className="flex items-center gap-6 mt-12">
-              <button 
-                onClick={handlePrev}
-                disabled={currentIndex === 0}
-                className="bg-slate-800 hover:bg-slate-700 disabled:opacity-30 text-white p-4 rounded-full transition-all"
-              >
-                <ChevronLeft size={24} />
-              </button>
-              
+            {/* Controles de Navegação (Dots) */}
+            <div className="flex items-center justify-center mt-8">
               <div className="flex gap-2">
                 {reviews.map((_, idx) => (
                   <div key={idx} className={`h-2 rounded-full transition-all duration-300 ${idx === currentIndex ? 'w-8 bg-fuchsia-500' : 'w-2 bg-slate-700'}`} />
                 ))}
               </div>
-
-              <button 
-                onClick={handleNext}
-                disabled={currentIndex === reviews.length - 1}
-                className="bg-slate-800 hover:bg-slate-700 disabled:opacity-30 text-white p-4 rounded-full transition-all"
-              >
-                <ChevronRight size={24} />
-              </button>
             </div>
           </div>
         </div>
