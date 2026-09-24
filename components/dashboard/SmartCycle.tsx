@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { ArrowRight, BookOpen, Clock, Target, CheckCircle2, Loader2, Sparkles, X, ChevronLeft, ChevronRight, RotateCw, Brain } from "lucide-react";
+import { BookOpen, Clock, Target, CheckCircle2, Loader2, Sparkles, X, ChevronLeft, ChevronRight, RotateCw, Brain } from "lucide-react";
 import { markReviewCompleted } from "@/app/actions";
 import { useRouter } from "next/navigation";
 import Link from "next/link";

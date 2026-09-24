@@ -32,7 +32,11 @@ function loadRuntime(storageKey: string): TimerRuntimeState {
 
 function saveRuntime(storageKey: string, state: TimerRuntimeState) {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(storageKey, JSON.stringify(state));
+  try {
+    window.localStorage.setItem(storageKey, JSON.stringify(state));
+  } catch {
+    // Quota exceeded or stringify failure — silently ignore
+  }
 }
 
 export function useTimerEngine(storageKey: string) {

@@ -44,13 +44,13 @@ export function playAlert(option: SoundOption) {
     if (!audio) {
       // Fallback
       let newAudio: HTMLAudioElement;
-    if (option === "suave") newAudio = new Audio("/audio/Suave.mp3");
+      if (option === "suave") newAudio = new Audio("/audio/Suave.mp3");
       else if (option === "forte") newAudio = new Audio("/audio/Alerta.mp3");
       else if (option === "despertador") newAudio = new Audio("/audio/Loop.mp3");
       else return;
       newAudio.volume = 0.8;
       newAudio.loop = true;
-      newAudio.play().catch((err) => console.log("Erro ao tocar áudio:", err));
+      newAudio.play().catch(() => {});
       
       stopTimeout = setTimeout(() => {
         newAudio.pause();
@@ -64,13 +64,13 @@ export function playAlert(option: SoundOption) {
     audio.currentTime = 0;
     audio.volume = 0.8;
     audio.loop = true;
-    audio.play().catch((err) => console.log("Erro ao tocar áudio:", err));
+    audio.play().catch(() => {});
 
     // Desliga automaticamente após 6 segundos
     stopTimeout = setTimeout(() => {
       stopAlert();
     }, 6000);
-  } catch (error) {
-    console.error("Erro ao disparar áudio:", error);
+  } catch {
+    // Audio playback failure — silently ignore
   }
 }

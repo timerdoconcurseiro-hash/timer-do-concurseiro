@@ -21,7 +21,11 @@ export function getSessions(): StudySession[] {
 }
 
 function saveSessions(sessions: StudySession[]) {
-  window.localStorage.setItem(KEY, JSON.stringify(sessions));
+  try {
+    window.localStorage.setItem(KEY, JSON.stringify(sessions));
+  } catch {
+    // Quota exceeded or stringify failure — silently ignore to avoid crash
+  }
 }
 
 export function addSession(session: Omit<StudySession, "id">): StudySession {

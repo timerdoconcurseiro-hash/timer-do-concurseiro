@@ -12,7 +12,11 @@ export function getDailyGoalMinutes(): number {
 }
 
 export function setDailyGoalMinutes(minutes: number) {
-  window.localStorage.setItem(GOAL_KEY, String(minutes));
+  try {
+    window.localStorage.setItem(GOAL_KEY, String(minutes));
+  } catch {
+    // Quota exceeded — silently ignore
+  }
 }
 
 export interface StreakState {
@@ -35,7 +39,11 @@ function loadStreak(): StreakState {
 }
 
 function saveStreak(streak: StreakState) {
-  window.localStorage.setItem(STREAK_KEY, JSON.stringify(streak));
+  try {
+    window.localStorage.setItem(STREAK_KEY, JSON.stringify(streak));
+  } catch {
+    // Quota exceeded or stringify failure — silently ignore
+  }
 }
 
 export function getStreak(): StreakState {

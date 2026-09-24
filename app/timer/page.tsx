@@ -19,7 +19,7 @@ export default async function TimerPage() {
         </Link>
       </div>
       <Suspense fallback={<div className="flex flex-1 items-center justify-center text-slate-400">Carregando Timer...</div>}>
-        <TimerApp />
+        <TimerApp isVip={profile?.plan === 'premium'} />
       </Suspense>
     </main>
   );

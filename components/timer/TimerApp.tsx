@@ -27,7 +27,7 @@ type Tab = "temporizador" | "cronometro" | "historico";
 
 const SOUND_KEY = "tc:soundOption";
 
-export function TimerApp() {
+export function TimerApp({ isVip = false }: { isVip?: boolean }) {
   const [tab, setTab] = useState<Tab>("temporizador");
   const [sessions, setSessions] = useState<StudySession[]>([]);
   const [goalMinutes, setGoalMinutes] = useState(240);
@@ -40,14 +40,33 @@ export function TimerApp() {
     setSessions(getSessions());
     setGoalMinutes(getDailyGoalMinutes());
     setStreakDays(getStreak().current);
-    const savedSound = window.localStorage.getItem(SOUND_KEY) as SoundOption | null;
-    if (savedSound) setSound(savedSound);
+    try {
+      const savedSound = window.localStorage.getItem(SOUND_KEY) as SoundOption | null;
+      if (savedSound) setSound(savedSound);
+    } catch {
+      // localStorage unavailable — use default sound
+    }
     setHydrated(true);
   }, []);
 
+  // Proteção na Montagem das Abas (Tab Navigation)
+  // Garante que ao mudar de aba, os temporizadores sempre iniciem limpos
+  useEffect(() => {
+    try {
+      window.localStorage.removeItem("timer:pomodoro");
+      window.localStorage.removeItem("timer:stopwatch");
+    } catch {
+      // localStorage unavailable — silently ignore
+    }
+  }, [tab]);
+
   function handleSoundChange(value: SoundOption) {
     setSound(value);
-    window.localStorage.setItem(SOUND_KEY, value);
+    try {
+      window.localStorage.setItem(SOUND_KEY, value);
+    } catch {
+      // Quota exceeded — silently ignore
+    }
   }
 
   function handleGoalChange(minutes: number) {
@@ -56,6 +75,8 @@ export function TimerApp() {
   }
 
   async function handleSaveSession(session: Omit<StudySession, "id">) {
+    if (!session || session.netSeconds <= 0) return;
+
     const before = sessions;
     const saved = addSession(session);
     const after = [...before, saved];
@@ -69,7 +90,7 @@ export function TimerApp() {
       grossSeconds: session.netSeconds, // simplified for now
       startedAt: session.startedAt,
       finishedAt: session.endedAt
-    }).catch(console.error);
+    }).catch(() => {});
 
     const { streak, justMet } = updateStreakAfterSession(
       before,
@@ -129,6 +150,7 @@ export function TimerApp() {
         {tab === "temporizador" && (
           <PomodoroPanel
             soundOption={sound}
+            isVip={isVip}
             onSessionComplete={handleSaveSession}
           />
         )}

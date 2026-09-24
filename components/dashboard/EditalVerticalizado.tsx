@@ -20,12 +20,20 @@ export function EditalVerticalizado({ initialData }: { initialData: any[] }) {
   const hasEdital = initialData && initialData.length > 0;
 
   useEffect(() => {
-    const savedName = localStorage.getItem("timer_exam_name");
-    if (savedName) setExamName(savedName);
+    try {
+      const savedName = localStorage.getItem("timer_exam_name");
+      if (savedName) setExamName(savedName);
+    } catch {
+      // localStorage unavailable — use default
+    }
   }, []);
 
   const saveExamName = () => {
-    localStorage.setItem("timer_exam_name", examName);
+    try {
+      localStorage.setItem("timer_exam_name", examName);
+    } catch {
+      // Quota exceeded — silently ignore
+    }
     setIsEditingName(false);
   };
 
@@ -93,7 +101,6 @@ export function EditalVerticalizado({ initialData }: { initialData: any[] }) {
 
       router.refresh();
     } catch (error: any) {
-      console.error(error);
       alert("Erro: " + error.message);
     } finally {
       setIsGenerating(false);

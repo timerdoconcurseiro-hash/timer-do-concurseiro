@@ -72,16 +72,22 @@ function loadPreset(): Preset {
 }
 
 function savePreset(preset: Preset) {
-  window.localStorage.setItem(PRESET_STORAGE_KEY, JSON.stringify(preset));
+  try {
+    window.localStorage.setItem(PRESET_STORAGE_KEY, JSON.stringify(preset));
+  } catch {
+    // Quota exceeded — silently ignore
+  }
 }
 
 interface PomodoroPanelProps {
   soundOption: SoundOption;
+  isVip?: boolean;
   onSessionComplete: (session: Omit<StudySession, "id">) => void;
 }
 
 export function PomodoroPanel({
   soundOption,
+  isVip = false,
   onSessionComplete,
 }: PomodoroPanelProps) {
   const searchParams = useSearchParams();
@@ -159,13 +165,21 @@ export function PomodoroPanel({
   );
   const isDone = elapsedMs >= durationMs;
 
+  const [isActive, setIsActive] = useState(false);
+
+  useEffect(() => {
+    if (runtime.running) setIsActive(true);
+  }, [runtime.running]);
+
   useEffect(() => {
     if (isDone && runtime.running) pause();
   }, [isDone, runtime.running, pause]);
 
   useEffect(() => {
-    if (!isDone || notifiedForRun) return;
+    if (!isDone || notifiedForRun || !isActive) return;
+
     setNotifiedForRun(true);
+    setIsActive(false);
     playAlert(soundOption);
 
     if (
@@ -225,8 +239,13 @@ export function PomodoroPanel({
     if (!isQueueMode && preset.kind !== "foco") {
       reset();
     }
+
+    // CLEANUP FUNCTION: Correção do Ciclo de Vida do Áudio (Prevenir Loop Infinito ao mudar de aba)
+    return () => {
+      stopAlert();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDone, notifiedForRun]);
+  }, [isDone, notifiedForRun, remainingSeconds]);
 
   async function handleConfirmEndSession() {
     const now = new Date();
@@ -256,10 +275,20 @@ export function PomodoroPanel({
     setShowEndModal(false);
     setCorrectAnswers("");
     setTotalQuestions("");
+    
+    // 2. Destruição Ativa do Estado no Storage (Purge)
+    stopAlert();
+    setIsActive(false);
+    reset();
+    setNotifiedForRun(false);
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem("timer:pomodoro");
+    }
   }
 
   function selectPreset(next: Preset) {
     if (runtime.running) return;
+    setIsActive(false);
     reset();
     savePreset(next);
     setNotifiedForRun(false);
@@ -282,10 +311,12 @@ export function PomodoroPanel({
     unlockAudio(); // Desbloqueia o áudio na primeira interação do usuário
     stopAlert(); // Para o alarme se ainda estiver tocando
     setNotifiedForRun(false);
+    setIsActive(true);
     start();
   }
 
   function handleZerar() {
+    setIsActive(false);
     reset();
     stopAlert();
     setNotifiedForRun(false);
@@ -440,39 +471,45 @@ export function PomodoroPanel({
           <div className="bg-[#0f172a] border border-slate-700 rounded-3xl p-8 w-full max-w-sm space-y-6 shadow-2xl animate-in fade-in zoom-in-95">
             <div className="text-center space-y-2">
               <h3 className="text-2xl font-bold text-slate-100">Sessão Concluída!</h3>
-              <p className="text-slate-400 text-sm">Registre seu desempenho (Opcional)</p>
+              {isVip ? (
+                <p className="text-slate-400 text-sm">Registre seu desempenho (Opcional)</p>
+              ) : (
+                <p className="text-slate-400 text-sm">Sessão finalizada com sucesso!</p>
+              )}
             </div>
             
-            <div className="flex gap-4">
-              <div className="space-y-1 flex-1">
-                <label className="text-xs font-semibold text-slate-400">Acertos</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={correctAnswers}
-                  onChange={(e) => setCorrectAnswers(e.target.value)}
-                  placeholder="Ex: 15"
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-slate-200 outline-none focus:border-emerald-500 transition-colors"
-                />
+            {isVip && (
+              <div className="flex gap-4">
+                <div className="space-y-1 flex-1">
+                  <label className="text-xs font-semibold text-slate-400">Acertos</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={correctAnswers}
+                    onChange={(e) => setCorrectAnswers(e.target.value)}
+                    placeholder="Ex: 15"
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-slate-200 outline-none focus:border-emerald-500 transition-colors"
+                  />
+                </div>
+                <div className="space-y-1 flex-1">
+                  <label className="text-xs font-semibold text-slate-400">Total</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={totalQuestions}
+                    onChange={(e) => setTotalQuestions(e.target.value)}
+                    placeholder="Ex: 20"
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-slate-200 outline-none focus:border-indigo-500 transition-colors"
+                  />
+                </div>
               </div>
-              <div className="space-y-1 flex-1">
-                <label className="text-xs font-semibold text-slate-400">Total</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={totalQuestions}
-                  onChange={(e) => setTotalQuestions(e.target.value)}
-                  placeholder="Ex: 20"
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-slate-200 outline-none focus:border-indigo-500 transition-colors"
-                />
-              </div>
-            </div>
+            )}
 
             <button
               onClick={handleConfirmEndSession}
               className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3.5 rounded-xl shadow-[0_0_20px_rgba(79,70,229,0.3)] transition-all"
             >
-              Salvar Sessão
+              {isVip ? "Salvar Sessão" : "Salvar Tempo"}
             </button>
           </div>
         </div>
