@@ -5,6 +5,8 @@ export interface StudySession {
   netSeconds: number;
   startedAt: string;
   endedAt: string;
+  correctAnswers?: number | null;
+  totalQuestions?: number | null;
 }
 
 const KEY = "tc:sessions";

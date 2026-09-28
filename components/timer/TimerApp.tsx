@@ -49,16 +49,6 @@ export function TimerApp({ isVip = false }: { isVip?: boolean }) {
     setHydrated(true);
   }, []);
 
-  // Proteção na Montagem das Abas (Tab Navigation)
-  // Garante que ao mudar de aba, os temporizadores sempre iniciem limpos
-  useEffect(() => {
-    try {
-      window.localStorage.removeItem("timer:pomodoro");
-      window.localStorage.removeItem("timer:stopwatch");
-    } catch {
-      // localStorage unavailable — silently ignore
-    }
-  }, [tab]);
 
   function handleSoundChange(value: SoundOption) {
     setSound(value);
@@ -111,7 +101,7 @@ export function TimerApp({ isVip = false }: { isVip?: boolean }) {
   const netSecondsToday = getNetSecondsForDate(sessions, new Date());
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-6 px-4 py-10">
+    <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col items-center justify-center gap-4 px-4 py-6">
       <GoalProgress
         netSecondsToday={netSecondsToday}
         goalMinutes={goalMinutes}
@@ -146,20 +136,20 @@ export function TimerApp({ isVip = false }: { isVip?: boolean }) {
         <SoundSelect value={sound} onChange={handleSoundChange} />
       )}
 
-      <div className="flex w-full justify-center">
-        {tab === "temporizador" && (
+      <div className="flex w-full justify-center flex-grow">
+        <div className={`w-full ${tab === "temporizador" ? "block" : "hidden"}`}>
           <PomodoroPanel
             soundOption={sound}
             isVip={isVip}
             onSessionComplete={handleSaveSession}
           />
-        )}
-        {tab === "cronometro" && (
+        </div>
+        <div className={`w-full ${tab === "cronometro" ? "block" : "hidden"}`}>
           <StopwatchPanel onSessionSaved={handleSaveSession} />
-        )}
-        {tab === "historico" && (
+        </div>
+        <div className={`w-full ${tab === "historico" ? "block" : "hidden"}`}>
           <HistoryPanel sessions={sessions} onClearAll={handleClearAll} />
-        )}
+        </div>
       </div>
 
       <GoalAchievedModal

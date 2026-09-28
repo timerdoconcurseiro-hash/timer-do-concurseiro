@@ -108,10 +108,10 @@ export function PomodoroPanel({
   const [queue, setQueue] = useState<Preset[]>([]);
   const [isQueueMode, setIsQueueMode] = useState(false);
 
-  // Modal de término
   const [showEndModal, setShowEndModal] = useState(false);
   const [correctAnswers, setCorrectAnswers] = useState("");
   const [totalQuestions, setTotalQuestions] = useState("");
+  const [noQuestions, setNoQuestions] = useState(false);
 
   const topicId = searchParams?.get("topicId") || "";
 
@@ -174,6 +174,14 @@ export function PomodoroPanel({
   useEffect(() => {
     if (isDone && runtime.running) pause();
   }, [isDone, runtime.running, pause]);
+
+  useEffect(() => {
+    if (runtime.running) {
+      document.title = `(${formatMmSs(remainingSeconds)}) Timer do Concurseiro`;
+    } else {
+      document.title = "Timer do Concurseiro";
+    }
+  }, [remainingSeconds, runtime.running]);
 
   useEffect(() => {
     if (!isDone || notifiedForRun || !isActive) return;
@@ -252,20 +260,19 @@ export function PomodoroPanel({
     let finalSubject = subjectCategory === "outra" ? customSubject.trim() : subjectCategory;
     if (!finalSubject) finalSubject = "Sem matéria definida";
     
-    // Anexa as questões se houver
-    let stats = "";
-    if (totalQuestions && correctAnswers) {
-      stats = ` [${correctAnswers}/${totalQuestions} acertos]`;
-    }
-    
-    const fullSubject = complement.trim() ? `${finalSubject} (${complement.trim()})${stats}` : `${finalSubject}${stats}`;
+    const fullSubject = complement.trim() ? `${finalSubject} (${complement.trim()})` : finalSubject;
+
+    const parsedCorrect = parseInt(correctAnswers, 10);
+    const parsedTotal = parseInt(totalQuestions, 10);
 
     onSessionComplete({
       subject: fullSubject,
       mode: "pomodoro",
-      netSeconds: preset.minutes * 60,
-      startedAt: new Date(now.getTime() - preset.minutes * 60000).toISOString(),
+      netSeconds: Math.round(elapsedMs / 1000),
+      startedAt: new Date(now.getTime() - elapsedMs).toISOString(),
       endedAt: now.toISOString(),
+      correctAnswers: noQuestions ? null : (isNaN(parsedCorrect) ? null : parsedCorrect),
+      totalQuestions: noQuestions ? null : (isNaN(parsedTotal) ? null : parsedTotal),
     });
 
     if (topicId) {
@@ -275,6 +282,7 @@ export function PomodoroPanel({
     setShowEndModal(false);
     setCorrectAnswers("");
     setTotalQuestions("");
+    setNoQuestions(false);
     
     // 2. Destruição Ativa do Estado no Storage (Purge)
     stopAlert();
@@ -323,7 +331,7 @@ export function PomodoroPanel({
   }
 
   return (
-    <div className="flex flex-col items-center gap-6">
+    <div className="flex flex-col items-center gap-4">
       <div className="flex flex-wrap justify-center gap-2">
         {PRESETS.map((p) => {
           const isSelected = preset.label === p.label;
@@ -446,7 +454,7 @@ export function PomodoroPanel({
                 : "bg-gradient-to-r from-action-start to-action-end"
             }`}
           >
-            Iniciar
+            {elapsedMs > 0 ? "Retomar" : "Iniciar"}
           </button>
         ) : (
           <button
@@ -455,6 +463,15 @@ export function PomodoroPanel({
             className="rounded-2xl border border-app-border px-6 py-2.5 font-medium text-text-primary transition hover:border-accent"
           >
             Pausar
+          </button>
+        )}
+        {!runtime.running && elapsedMs > 0 && preset.kind === "foco" && (
+          <button
+            type="button"
+            onClick={() => setShowEndModal(true)}
+            className="rounded-2xl border border-app-border px-6 py-2.5 font-medium text-accent transition hover:bg-accent/10"
+          >
+            Salvar Progresso
           </button>
         )}
         <button
@@ -479,29 +496,43 @@ export function PomodoroPanel({
             </div>
             
             {isVip && (
-              <div className="flex gap-4">
-                <div className="space-y-1 flex-1">
-                  <label className="text-xs font-semibold text-slate-400">Acertos</label>
+              <div className="space-y-4">
+                <label className="flex items-center gap-2 text-sm text-slate-300">
                   <input
-                    type="number"
-                    min="0"
-                    value={correctAnswers}
-                    onChange={(e) => setCorrectAnswers(e.target.value)}
-                    placeholder="Ex: 15"
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-slate-200 outline-none focus:border-emerald-500 transition-colors"
+                    type="checkbox"
+                    checked={noQuestions}
+                    onChange={(e) => setNoQuestions(e.target.checked)}
+                    className="rounded border-slate-700 bg-slate-800 text-accent focus:ring-accent focus:ring-offset-slate-900"
                   />
-                </div>
-                <div className="space-y-1 flex-1">
-                  <label className="text-xs font-semibold text-slate-400">Total</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={totalQuestions}
-                    onChange={(e) => setTotalQuestions(e.target.value)}
-                    placeholder="Ex: 20"
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-slate-200 outline-none focus:border-indigo-500 transition-colors"
-                  />
-                </div>
+                  Não resolvi questões
+                </label>
+                
+                {!noQuestions && (
+                  <div className="flex gap-4">
+                    <div className="space-y-1 flex-1">
+                      <label className="text-xs font-semibold text-slate-400">Acertos</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={correctAnswers}
+                        onChange={(e) => setCorrectAnswers(e.target.value)}
+                        placeholder="Ex: 15"
+                        className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-slate-200 outline-none focus:border-emerald-500 transition-colors"
+                      />
+                    </div>
+                    <div className="space-y-1 flex-1">
+                      <label className="text-xs font-semibold text-slate-400">Total</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={totalQuestions}
+                        onChange={(e) => setTotalQuestions(e.target.value)}
+                        placeholder="Ex: 20"
+                        className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-slate-200 outline-none focus:border-indigo-500 transition-colors"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

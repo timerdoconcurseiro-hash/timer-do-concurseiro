@@ -76,7 +76,7 @@ export function StopwatchPanel({ onSessionSaved }: StopwatchPanelProps) {
   }
 
   return (
-    <div className="flex flex-col items-center gap-6">
+    <div className="flex flex-col items-center gap-4">
       <div className="flex h-56 w-56 items-center justify-center rounded-full border-4 border-app-border font-display text-4xl tabular-nums">
         {formatHms(elapsedSeconds)}
       </div>

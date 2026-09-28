@@ -64,6 +64,7 @@ export function HistoryPanel({ sessions, onClearAll }: HistoryPanelProps) {
                 <th className="px-4 py-2">Matéria</th>
                 <th className="px-4 py-2">Modo</th>
                 <th className="px-4 py-2">Horas líquidas</th>
+                <th className="px-4 py-2">Questões (Acertos / Total)</th>
                 <th className="px-4 py-2">Início</th>
               </tr>
             </thead>
@@ -76,6 +77,11 @@ export function HistoryPanel({ sessions, onClearAll }: HistoryPanelProps) {
                   </td>
                   <td className="px-4 py-2 tabular-nums">
                     {formatHms(s.netSeconds)}
+                  </td>
+                  <td className="px-4 py-2 text-center text-text-secondary">
+                    {s.correctAnswers != null && s.totalQuestions != null
+                      ? `${s.correctAnswers} / ${s.totalQuestions}`
+                      : "-"}
                   </td>
                   <td className="px-4 py-2 text-text-secondary">
                     {new Date(s.startedAt).toLocaleString("pt-BR")}
