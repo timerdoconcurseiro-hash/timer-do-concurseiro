@@ -36,11 +36,14 @@ const SUBJECTS = [
   }
 ];
 
+import { playAlert, unlockAudio, type SoundOption } from "@/lib/sounds/beep";
+
 interface StopwatchPanelProps {
+  soundOption: SoundOption;
   onSessionSaved: (session: Omit<StudySession, "id">) => void;
 }
 
-export function StopwatchPanel({ onSessionSaved }: StopwatchPanelProps) {
+export function StopwatchPanel({ soundOption, onSessionSaved }: StopwatchPanelProps) {
   const [subjectCategory, setSubjectCategory] = useState("");
   const [customSubject, setCustomSubject] = useState("");
   const [complement, setComplement] = useState("");
@@ -50,9 +53,16 @@ export function StopwatchPanel({ onSessionSaved }: StopwatchPanelProps) {
 
   const elapsedSeconds = Math.floor(elapsedMs / 1000);
 
+  function handleStart() {
+    unlockAudio();
+    start();
+  }
+
   function handleSave() {
     if (elapsedSeconds <= 0) return;
     if (runtime.running) pause();
+
+    playAlert(soundOption, 2500);
 
     const now = new Date();
 
@@ -121,7 +131,7 @@ export function StopwatchPanel({ onSessionSaved }: StopwatchPanelProps) {
         {!runtime.running ? (
           <button
             type="button"
-            onClick={start}
+            onClick={handleStart}
             className="rounded-2xl bg-gradient-to-r from-action-start to-action-end px-6 py-2.5 font-medium text-app-bg shadow-lg transition hover:opacity-90"
           >
             Iniciar

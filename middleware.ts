@@ -33,10 +33,7 @@ export async function middleware(request: NextRequest) {
           })
         },
         remove(name: string, options: CookieOptions) {
-          request.cookies.delete({
-            name,
-            ...options,
-          })
+          request.cookies.delete(name)
           supabaseResponse = NextResponse.next({
             request: {
               headers: request.headers,

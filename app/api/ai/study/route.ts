@@ -27,8 +27,9 @@ export async function POST(request: Request) {
 
     const { textContext } = await request.json();
 
-    if (!textContext || textContext.length < 50) {
-      return NextResponse.json({ error: 'Texto muito curto para gerar flashcards.' }, { status: 400 });
+    const rawText = typeof textContext === "string" ? textContext : textContext?.texto || "";
+    if (!rawText || rawText.trim().length < 50) {
+      return NextResponse.json({ error: 'Texto muito curto para gerar flashcards (mínimo 50 caracteres).' }, { status: 400 });
     }
 
     const apiKey = process.env.GEMINI_API_KEY;
@@ -37,18 +38,16 @@ export async function POST(request: Request) {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ 
-      model: 'gemini-3.6-flash',
-      generationConfig: { responseMimeType: "application/json" }
-    });
+    const disciplina = typeof textContext === "object" ? textContext.disciplina : "";
+    const assunto = typeof textContext === "object" ? textContext.assunto_complemento : "";
 
     const prompt = `
     Você é um professor especialista em preparação para concursos públicos. E também um tutor focado na metodologia de revisão ativa (Flashcards). 
     NUNCA forneça respostas genéricas, conselhos de estudo ou frases como 'tente relembrar os pontos'. Forneça EXCLUSIVAMENTE o conceito, a lei ou o resumo técnico exato que responde à pergunta gerada. Seja direto e objetivo.
 
     O aluno enviou um trecho de material de estudo e os dados da última sessão estudada:
-    Disciplina: ${textContext.disciplina || "Não informada"}
-    Assunto/Complemento: ${textContext.assunto_complemento || "Não informado"}
+    Disciplina: ${disciplina || "Não informada"}
+    Assunto/Complemento: ${assunto || "Não informado"}
     
     Faça duas coisas:
     1. Crie um resumo ultra-focado (bullet points) com os conceitos principais.
@@ -64,30 +63,27 @@ export async function POST(request: Request) {
     }
 
     Texto/Contexto enviado pelo aluno:
-    ${textContext.texto || textContext}
+    ${rawText}
     `;
 
-    let result;
-    try {
-      result = await model.generateContent(prompt);
-    } catch (e: any) {
-      if (e.message && (e.message.includes('503') || e.message.includes('429'))) {
-        console.warn("Fallback to gemini-3.7-flash due to overload on 3.6-flash");
-        try {
-          const fallbackModel = genAI.getGenerativeModel({ model: 'gemini-3.7-flash' });
-          result = await fallbackModel.generateContent(prompt);
-        } catch (e2: any) {
-          console.warn("Fallback to gemini-3.5-flash due to overload on 3.7-flash");
-          const finalModel = genAI.getGenerativeModel({ model: 'gemini-3.5-flash' });
-          result = await finalModel.generateContent(prompt);
-        }
-      } else if (e.message && e.message.includes('404')) {
-        console.warn("Fallback to gemini-3.5-flash due to 404");
-        const fallbackModel = genAI.getGenerativeModel({ model: 'gemini-3.5-flash' });
-        result = await fallbackModel.generateContent(prompt);
-      } else {
-        throw e;
+    const candidateModels = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-3.6-flash', 'gemini-3.5-flash'];
+    let result: any = null;
+    let lastError: any = null;
+    for (const modelName of candidateModels) {
+      try {
+        const m = genAI.getGenerativeModel({
+          model: modelName,
+          generationConfig: { responseMimeType: "application/json" }
+        });
+        result = await m.generateContent(prompt);
+        break;
+      } catch (e: any) {
+        lastError = e;
+        console.warn(`Fallback from ${modelName}:`, e?.message);
       }
+    }
+    if (!result) {
+      throw lastError || new Error("Nenhum modelo Gemini disponível respondeu.");
     }
     const responseText = result.response.text();
     

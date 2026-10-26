@@ -52,18 +52,13 @@ export async function saveStudySession(data: {
   const { data: profile } = await supabase.from('profiles').select('plan').eq('id', authData.user.id).single();
   
   if (profile?.plan === 'premium') {
-    const today = new Date();
-    
-    // Calcula as 3 datas
-    const d1 = new Date(today); d1.setDate(d1.getDate() + 1);
-    const d7 = new Date(today); d7.setDate(d7.getDate() + 7);
-    const d30 = new Date(today); d30.setDate(d30.getDate() + 30);
-
-    const reviewsToInsert = [
-      { user_id: authData.user.id, subject: data.subject, topic: data.topic, review_date: d1.toISOString().split('T')[0] },
-      { user_id: authData.user.id, subject: data.subject, topic: data.topic, review_date: d7.toISOString().split('T')[0] },
-      { user_id: authData.user.id, subject: data.subject, topic: data.topic, review_date: d30.toISOString().split('T')[0] },
-    ];
+    // Calcula as 3 datas (fuso de Brasília)
+    const reviewsToInsert = [1, 7, 30].map((offset) => ({
+      user_id: authData.user.id,
+      subject: data.subject,
+      topic: data.topic,
+      review_date: todayKey(offset),
+    }));
 
     // Insere ignorando caso ele já tenha estudado isso hoje para evitar duplicatas pro mesmo dia
     for (const rev of reviewsToInsert) {
@@ -134,7 +129,9 @@ export async function getHeatmapData() {
   const { data, error } = await supabase
     .from("study_sessions")
     .select("finished_at, net_seconds, subject")
-    .eq("user_id", authData.user.id);
+    .eq("user_id", authData.user.id)
+    .order("finished_at", { ascending: true })
+    .limit(5000);
 
   if (error || !data) return [];
   return data;
@@ -226,12 +223,18 @@ export async function getTotalStudiedHours() {
   return totalSeconds / 3600;
 }
 
+// Data local (YYYY-MM-DD) no fuso de Brasília, para evitar "pular" o dia após 21h (UTC)
+function todayKey(offsetDays = 0) {
+  const d = new Date(Date.now() + offsetDays * 86400000);
+  return d.toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+}
+
 export async function getTodayReviews() {
   const supabase = await createClient();
   const { data: authData } = await supabase.auth.getUser();
   if (!authData.user) return [];
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = todayKey();
 
   const { data, error } = await supabase
     .from("spaced_reviews")
@@ -260,42 +263,187 @@ export async function markReviewCompleted(reviewId: string) {
   return { success: true };
 }
 
-// ==========================================
-// EDITAL VERTICALIZADO (IA + GAMIFICAÇÃO)
-// ==========================================
-
-export async function saveGeneratedEdital(editalData: any) {
+export async function postponeReview(reviewId: string, days: number = 1) {
   const supabase = await createClient();
   const { data: authData } = await supabase.auth.getUser();
   if (!authData.user) return { success: false, error: "Não autenticado" };
 
+  const safeDays = Math.min(Math.max(Math.round(days), 1), 30);
+
+  const { error } = await supabase
+    .from("spaced_reviews")
+    .update({ review_date: todayKey(safeDays), updated_at: new Date().toISOString() })
+    .eq("id", reviewId)
+    .eq("user_id", authData.user.id);
+
+  if (error) return { success: false, error: error.message };
+  return { success: true };
+}
+
+// ==========================================
+// HELPERS DE MATÉRIA (normalização p/ cruzar sessões do Timer com o Edital)
+// ==========================================
+
+function normalizeName(value: string) {
+  return (value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+// O Timer salva "Disciplina (Complemento)". Extraímos só a disciplina.
+function baseSubject(value: string) {
+  const idx = (value || "").indexOf(" (");
+  return (idx > 0 ? value.slice(0, idx) : value || "").trim();
+}
+
+function sessionMatchesSubject(sessionSubject: string, editalSubject: string) {
+  const s = normalizeName(sessionSubject);
+  const e = normalizeName(editalSubject);
+  if (!e) return false;
+  return normalizeName(baseSubject(sessionSubject)) === e || s.startsWith(e);
+}
+
+function daysBetweenLocal(from: Date) {
+  const tz = { timeZone: "America/Sao_Paulo" } as const;
+  const a = new Date(from.toLocaleDateString("en-CA", tz) + "T00:00:00Z").getTime();
+  const b = new Date(new Date().toLocaleDateString("en-CA", tz) + "T00:00:00Z").getTime();
+  return Math.max(0, Math.round((b - a) / 86400000));
+}
+
+// ==========================================
+// RADAR DE NEGLIGÊNCIA (dados reais do Supabase)
+// ==========================================
+
+export type RadarItem = {
+  subject: string;
+  daysAgo: number | null; // null = nunca estudada
+  totalHours: number;
+  status: "green" | "yellow" | "red" | "never";
+};
+
+export async function getRadarData(): Promise<RadarItem[]> {
+  const supabase = await createClient();
+  const { data: authData } = await supabase.auth.getUser();
+  if (!authData.user) return [];
+
+  const [{ data: sessions }, { data: editalSubjects }] = await Promise.all([
+    supabase
+      .from("study_sessions")
+      .select("subject, finished_at, net_seconds")
+      .eq("user_id", authData.user.id),
+    supabase
+      .from("edital_subjects")
+      .select("name")
+      .eq("user_id", authData.user.id),
+  ]);
+
+  const list = sessions || [];
+
+  // Se houver edital cadastrado, o radar monitora as matérias do edital.
+  // Caso contrário, monitora as matérias que aparecem no histórico do Timer.
+  let subjectNames: string[];
+  if (editalSubjects && editalSubjects.length > 0) {
+    subjectNames = editalSubjects.map((s) => s.name);
+  } else {
+    const set = new Map<string, string>();
+    list.forEach((s) => {
+      const base = baseSubject(s.subject);
+      if (!base || normalizeName(base) === "sem materia definida") return;
+      if (!set.has(normalizeName(base))) set.set(normalizeName(base), base);
+    });
+    subjectNames = Array.from(set.values());
+  }
+
+  const items: RadarItem[] = subjectNames.map((name) => {
+    const matches = list.filter((s) => sessionMatchesSubject(s.subject, name));
+    const totalHours = Number(
+      (matches.reduce((acc, s) => acc + (s.net_seconds || 0), 0) / 3600).toFixed(1)
+    );
+
+    if (matches.length === 0) {
+      return { subject: name, daysAgo: null, totalHours: 0, status: "never" };
+    }
+
+    const last = matches.reduce((latest, s) => {
+      const d = new Date(s.finished_at);
+      return d > latest ? d : latest;
+    }, new Date(0));
+
+    const daysAgo = daysBetweenLocal(last);
+    const status: RadarItem["status"] = daysAgo <= 3 ? "green" : daysAgo <= 7 ? "yellow" : "red";
+    return { subject: name, daysAgo, totalHours, status };
+  });
+
+  const weight = { never: 4, red: 3, yellow: 2, green: 1 };
+  items.sort((a, b) => {
+    if (weight[a.status] !== weight[b.status]) return weight[b.status] - weight[a.status];
+    return (b.daysAgo ?? 0) - (a.daysAgo ?? 0);
+  });
+
+  return items;
+}
+
+// ==========================================
+// EDITAL VERTICALIZADO (IA + GAMIFICAÇÃO)
+// ==========================================
+
+type GeneratedEdital = {
+  subjects: { name: string; target_hours: number; topics: string[] }[];
+};
+
+function sanitizeGeneratedEdital(raw: unknown): GeneratedEdital | null {
+  if (!raw || typeof raw !== "object" || !Array.isArray((raw as any).subjects)) return null;
+
+  const subjects = ((raw as any).subjects as any[])
+    .filter((s) => s && typeof s.name === "string" && s.name.trim())
+    .slice(0, 60)
+    .map((s) => ({
+      name: String(s.name).trim().slice(0, 150),
+      target_hours: Math.min(Math.max(Math.round(Number(s.target_hours) || 0), 0), 2000),
+      topics: (Array.isArray(s.topics) ? s.topics : [])
+        .map((t: unknown) => (typeof t === "string" ? t : (t as any)?.name))
+        .filter((t: unknown): t is string => typeof t === "string" && t.trim().length > 0)
+        .slice(0, 200)
+        .map((t: string) => t.trim().slice(0, 300)),
+    }));
+
+  return subjects.length > 0 ? { subjects } : null;
+}
+
+export async function saveGeneratedEdital(editalData: unknown) {
+  const supabase = await createClient();
+  const { data: authData } = await supabase.auth.getUser();
+  if (!authData.user) return { success: false, error: "Não autenticado" };
+
+  const edital = sanitizeGeneratedEdital(editalData);
+  if (!edital) {
+    return { success: false, error: "A IA não retornou matérias válidas. Tente novamente com um texto mais limpo." };
+  }
+
   try {
-    // Para cada subject, insere no banco
-    for (const subject of editalData.subjects) {
+    for (const subject of edital.subjects) {
       const { data: subjData, error: subjErr } = await supabase
-        .from('edital_subjects')
+        .from("edital_subjects")
         .insert({
           user_id: authData.user.id,
           name: subject.name,
           target_hours: subject.target_hours,
         })
-        .select()
+        .select("id")
         .single();
-        
+
       if (subjErr) throw subjErr;
 
-      // Para cada tópico do subject, insere
-      const topicsToInsert = subject.topics.map((topicName: string) => ({
-        subject_id: subjData.id,
-        name: topicName,
-        completed: false
-      }));
-
-      if (topicsToInsert.length > 0) {
-        const { error: topErr } = await supabase
-          .from('edital_topics')
-          .insert(topicsToInsert);
-          
+      if (subject.topics.length > 0) {
+        const { error: topErr } = await supabase.from("edital_topics").insert(
+          subject.topics.map((topicName) => ({
+            subject_id: subjData.id,
+            name: topicName,
+            completed: false,
+          }))
+        );
         if (topErr) throw topErr;
       }
     }
@@ -307,33 +455,166 @@ export async function saveGeneratedEdital(editalData: any) {
   }
 }
 
-export async function getEditalVerticalizado() {
+export type EditalTopic = { id: string; name: string; completed: boolean };
+export type EditalSubject = {
+  id: string;
+  name: string;
+  target_hours: number;
+  studied_hours: number;
+  edital_topics: EditalTopic[];
+};
+
+export async function getEditalVerticalizado(): Promise<{ success: boolean; data: EditalSubject[]; error?: string }> {
   const supabase = await createClient();
   const { data: authData } = await supabase.auth.getUser();
   if (!authData.user) return { success: false, data: [] };
 
-  const { data, error } = await supabase
-    .from('edital_subjects')
-    .select(`
-      id, name, target_hours, studied_hours,
-      edital_topics (id, name, completed)
-    `)
-    .eq('user_id', authData.user.id)
-    .order('created_at', { ascending: true });
+  const [{ data, error }, { data: sessions }] = await Promise.all([
+    supabase
+      .from("edital_subjects")
+      .select(`
+        id, name, target_hours, created_at,
+        edital_topics (id, name, completed, created_at)
+      `)
+      .eq("user_id", authData.user.id)
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("study_sessions")
+      .select("subject, net_seconds")
+      .eq("user_id", authData.user.id),
+  ]);
 
-  if (error) return { success: false, error: error.message };
-  return { success: true, data };
+  if (error) return { success: false, data: [], error: error.message };
+
+  const result: EditalSubject[] = (data || []).map((s: any) => {
+    // Horas estudadas calculadas a partir das sessões reais do Timer
+    const seconds = (sessions || [])
+      .filter((sess) => sessionMatchesSubject(sess.subject, s.name))
+      .reduce((acc, sess) => acc + (sess.net_seconds || 0), 0);
+
+    const topics = [...(s.edital_topics || [])].sort(
+      (a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    );
+
+    return {
+      id: s.id,
+      name: s.name,
+      target_hours: s.target_hours || 0,
+      studied_hours: Number((seconds / 3600).toFixed(1)),
+      edital_topics: topics.map((t: any) => ({ id: t.id, name: t.name, completed: !!t.completed })),
+    };
+  });
+
+  return { success: true, data: result };
 }
 
 export async function toggleTopicCompleted(topicId: string, completed: boolean) {
   const supabase = await createClient();
+  const { data: authData } = await supabase.auth.getUser();
+  if (!authData.user) return { success: false, error: "Não autenticado" };
+
   const { error } = await supabase
-    .from('edital_topics')
-    .update({ 
-      completed, 
-      completed_at: completed ? new Date().toISOString() : null 
+    .from("edital_topics")
+    .update({
+      completed,
+      completed_at: completed ? new Date().toISOString() : null,
     })
-    .eq('id', topicId);
+    .eq("id", topicId);
+
+  if (error) return { success: false, error: error.message };
+  return { success: true };
+}
+
+export async function addEditalSubject(name: string, targetHours: number) {
+  const supabase = await createClient();
+  const { data: authData } = await supabase.auth.getUser();
+  if (!authData.user) return { success: false, error: "Não autenticado" };
+
+  const cleanName = (name || "").trim().slice(0, 150);
+  if (!cleanName) return { success: false, error: "Informe o nome da matéria." };
+
+  const { error } = await supabase.from("edital_subjects").insert({
+    user_id: authData.user.id,
+    name: cleanName,
+    target_hours: Math.min(Math.max(Math.round(Number(targetHours) || 0), 0), 2000),
+  });
+
+  if (error) return { success: false, error: error.message };
+  return { success: true };
+}
+
+export async function updateEditalSubject(subjectId: string, data: { name?: string; targetHours?: number }) {
+  const supabase = await createClient();
+  const { data: authData } = await supabase.auth.getUser();
+  if (!authData.user) return { success: false, error: "Não autenticado" };
+
+  const patch: Record<string, unknown> = {};
+  if (typeof data.name === "string") {
+    const cleanName = data.name.trim().slice(0, 150);
+    if (!cleanName) return { success: false, error: "O nome não pode ficar vazio." };
+    patch.name = cleanName;
+  }
+  if (typeof data.targetHours === "number") {
+    patch.target_hours = Math.min(Math.max(Math.round(data.targetHours), 0), 2000);
+  }
+
+  const { error } = await supabase
+    .from("edital_subjects")
+    .update(patch)
+    .eq("id", subjectId)
+    .eq("user_id", authData.user.id);
+
+  if (error) return { success: false, error: error.message };
+  return { success: true };
+}
+
+export async function deleteEditalSubject(subjectId: string) {
+  const supabase = await createClient();
+  const { data: authData } = await supabase.auth.getUser();
+  if (!authData.user) return { success: false, error: "Não autenticado" };
+
+  const { error } = await supabase
+    .from("edital_subjects")
+    .delete()
+    .eq("id", subjectId)
+    .eq("user_id", authData.user.id);
+
+  if (error) return { success: false, error: error.message };
+  return { success: true };
+}
+
+export async function addEditalTopic(subjectId: string, name: string) {
+  const supabase = await createClient();
+  const { data: authData } = await supabase.auth.getUser();
+  if (!authData.user) return { success: false, error: "Não autenticado" };
+
+  const cleanName = (name || "").trim().slice(0, 300);
+  if (!cleanName) return { success: false, error: "Informe o nome do tópico." };
+
+  // Garante que a matéria pertence ao usuário
+  const { data: subject } = await supabase
+    .from("edital_subjects")
+    .select("id")
+    .eq("id", subjectId)
+    .eq("user_id", authData.user.id)
+    .single();
+  if (!subject) return { success: false, error: "Matéria não encontrada." };
+
+  const { error } = await supabase
+    .from("edital_topics")
+    .insert({ subject_id: subjectId, name: cleanName, completed: false });
+
+  if (error) return { success: false, error: error.message };
+  return { success: true };
+}
+
+export async function deleteEditalTopic(topicId: string) {
+  const supabase = await createClient();
+  const { data: authData } = await supabase.auth.getUser();
+  if (!authData.user) return { success: false, error: "Não autenticado" };
+
+  // RLS de edital_topics garante que só tópicos do próprio usuário são afetados
+  const { error } = await supabase.from("edital_topics").delete().eq("id", topicId);
 
   if (error) return { success: false, error: error.message };
   return { success: true };
@@ -345,31 +626,9 @@ export async function deleteEditalVerticalizado() {
   if (!authData.user) return { success: false, error: "Não autenticado" };
 
   const { error } = await supabase
-    .from('edital_subjects')
+    .from("edital_subjects")
     .delete()
-    .eq('user_id', authData.user.id);
-
-  if (error) return { success: false, error: error.message };
-  return { success: true };
-}
-
-export async function saveAIFlashcards(flashcards: { question: string; answer: string }[], subject: string) {
-  const supabase = await createClient();
-  const { data: authData } = await supabase.auth.getUser();
-  if (!authData.user) return { success: false, error: "Não autenticado" };
-
-  const today = new Date().toISOString().split('T')[0];
-
-  const cardsToInsert = flashcards.map(card => ({
-    user_id: authData.user.id,
-    subject: subject || "Revisão Geral",
-    topic: card.question,
-    notes: card.answer,
-    status: 'pending',
-    review_date: today
-  }));
-
-  const { error } = await supabase.from('spaced_reviews').insert(cardsToInsert);
+    .eq("user_id", authData.user.id);
 
   if (error) return { success: false, error: error.message };
   return { success: true };

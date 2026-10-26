@@ -1,101 +1,125 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Radar, AlertTriangle, Info, CheckCircle2 } from "lucide-react";
+import { Radar, AlertTriangle, Info, CheckCircle2, Play, Sparkles } from "lucide-react";
+import Link from "next/link";
+import { getSessions } from "@/lib/storage/sessions";
+import type { RadarItem } from "@/app/actions";
 
-interface SessionInfo {
-  subject: string;
-  lastStudied: Date;
+function baseSubject(value: string) {
+  const idx = (value || "").indexOf(" (");
+  return (idx > 0 ? value.slice(0, idx) : value || "").trim();
 }
 
-export function RadarNegligencia() {
-  const [subjectData, setSubjectData] = useState<{ subject: string; daysAgo: number; status: 'green' | 'yellow' | 'red' }[]>([]);
+export function RadarNegligencia({ initialData }: { initialData?: RadarItem[] }) {
+  const [items, setItems] = useState<RadarItem[]>(initialData || []);
 
   useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem('timer_sessions');
-      if (stored) {
-        const sessions = JSON.parse(stored);
-        
-        const latestBySubject: Record<string, Date> = {};
-        
-        sessions.forEach((s: any) => {
-          if (s.subject && s.subject !== "Sem matéria definida") {
-            const date = new Date(s.timestamp || s.startedAt || Date.now());
-            if (!latestBySubject[s.subject] || date > latestBySubject[s.subject]) {
-              latestBySubject[s.subject] = date;
-            }
-          }
-        });
-
-        const now = new Date();
-        const data = Object.entries(latestBySubject).map(([subject, date]) => {
-          const diffTime = Math.abs(now.getTime() - date.getTime());
-          const daysAgo = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-          
-          let status: 'green' | 'yellow' | 'red' = 'red';
-          if (daysAgo <= 3) status = 'green';
-          else if (daysAgo <= 7) status = 'yellow';
-
-          return { subject, daysAgo, status };
-        });
-
-        // Sort: Red first, then Yellow, then Green, then by days descending
-        data.sort((a, b) => {
-          const statusVal = { red: 3, yellow: 2, green: 1 };
-          if (statusVal[a.status] !== statusVal[b.status]) {
-            return statusVal[b.status] - statusVal[a.status];
-          }
-          return b.daysAgo - a.daysAgo;
-        });
-
-        setSubjectData(data);
-      }
-    } catch {
-      // Ignore
+    if (initialData && initialData.length > 0) {
+      setItems(initialData);
+      return;
     }
-  }, []);
 
-  if (subjectData.length === 0) {
+    // Fallback: usa as sessões salvas localmente no navegador ("tc:sessions")
+    try {
+      const localSessions = getSessions();
+      if (!localSessions || localSessions.length === 0) return;
+
+      const bySubject: Record<string, { lastDate: Date; totalSeconds: number }> = {};
+
+      localSessions.forEach((s) => {
+        const subj = baseSubject(s.subject);
+        if (!subj || subj.toLowerCase() === "sem matéria definida") return;
+        const d = new Date(s.endedAt || s.startedAt || Date.now());
+        if (!bySubject[subj]) {
+          bySubject[subj] = { lastDate: d, totalSeconds: 0 };
+        }
+        if (d > bySubject[subj].lastDate) {
+          bySubject[subj].lastDate = d;
+        }
+        bySubject[subj].totalSeconds += s.netSeconds || 0;
+      });
+
+      const now = new Date();
+      const computed: RadarItem[] = Object.entries(bySubject).map(([subject, info]) => {
+        const diffTime = Math.max(0, now.getTime() - info.lastDate.getTime());
+        const daysAgo = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        const status: RadarItem["status"] =
+          daysAgo <= 3 ? "green" : daysAgo <= 7 ? "yellow" : "red";
+        return {
+          subject,
+          daysAgo,
+          totalHours: Number((info.totalSeconds / 3600).toFixed(1)),
+          status,
+        };
+      });
+
+      const weight = { never: 4, red: 3, yellow: 2, green: 1 };
+      computed.sort((a, b) => {
+        if (weight[a.status] !== weight[b.status]) return weight[b.status] - weight[a.status];
+        return (b.daysAgo ?? 0) - (a.daysAgo ?? 0);
+      });
+
+      setItems(computed);
+    } catch {
+      // ignore
+    }
+  }, [initialData]);
+
+  if (items.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-6 text-center">
         <Radar size={40} className="text-amber-400 mb-4 opacity-50" />
-        <h4 className="text-slate-200 font-medium mb-2">Sem Dados</h4>
+        <h4 className="text-slate-200 font-medium mb-2">Sem Dados no Radar</h4>
         <p className="text-slate-400 text-sm">
-          O radar precisa de sessões de estudo salvas no Timer para funcionar.
+          Cadastre seu Edital ou conclua sessões no Timer para monitorar matérias esquecidas.
         </p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-3">
-      {subjectData.map((item, index) => (
-        <div key={index} className="bg-slate-900/50 border border-slate-700/50 rounded-xl p-4 flex items-center gap-3">
-          {item.status === 'green' && (
-            <div className="bg-emerald-500/20 p-2 rounded-full text-emerald-400">
+    <div className="space-y-3 max-h-[360px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-slate-800">
+      {items.map((item, index) => (
+        <div
+          key={index}
+          className="bg-slate-900/50 border border-slate-700/50 rounded-xl p-3.5 flex items-center gap-3 hover:border-slate-600 transition-colors"
+        >
+          {item.status === "green" && (
+            <div className="bg-emerald-500/20 p-2 rounded-full text-emerald-400 shrink-0">
               <CheckCircle2 size={18} />
             </div>
           )}
-          {item.status === 'yellow' && (
-            <div className="bg-yellow-500/20 p-2 rounded-full text-yellow-400">
+          {item.status === "yellow" && (
+            <div className="bg-yellow-500/20 p-2 rounded-full text-yellow-400 shrink-0">
               <Info size={18} />
             </div>
           )}
-          {item.status === 'red' && (
-            <div className="bg-red-500/20 p-2 rounded-full text-red-400">
+          {(item.status === "red" || item.status === "never") && (
+            <div className="bg-red-500/20 p-2 rounded-full text-red-400 shrink-0">
               <AlertTriangle size={18} />
             </div>
           )}
 
-          <div className="flex-1">
-            <h4 className="font-bold text-slate-200">{item.subject}</h4>
-            <p className="text-sm text-slate-400">
-              {item.status === 'green' && `Revisado há ${item.daysAgo === 0 ? 'hoje' : item.daysAgo + ' dia(s)'}`}
-              {item.status === 'yellow' && `Atenção, ${item.daysAgo} dias sem revisão`}
-              {item.status === 'red' && `Negligenciada há ${item.daysAgo} dias!`}
+          <div className="flex-1 min-w-0">
+            <h4 className="font-bold text-sm text-slate-200 truncate">{item.subject}</h4>
+            <p className="text-xs text-slate-400">
+              {item.status === "never" && "Nunca estudada no Timer!"}
+              {item.status === "green" &&
+                `Estudada ${item.daysAgo === 0 ? "hoje" : `há ${item.daysAgo} dia(s)`}`}
+              {item.status === "yellow" && `Atenção: ${item.daysAgo} dias sem revisão`}
+              {item.status === "red" && `Negligenciada há ${item.daysAgo} dias!`}
+              {item.totalHours > 0 && ` • ${item.totalHours}h`}
             </p>
           </div>
+
+          <Link
+            href={`/timer?subject=${encodeURIComponent(item.subject)}`}
+            className="p-2 rounded-full bg-slate-800 hover:bg-amber-500/20 text-slate-300 hover:text-amber-400 transition-colors shrink-0"
+            title={`Estudar ${item.subject} agora`}
+          >
+            <Play size={14} className="ml-0.5" />
+          </Link>
         </div>
       ))}
     </div>

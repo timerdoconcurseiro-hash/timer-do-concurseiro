@@ -1,7 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import { createPortal } from "react-dom";
+import { ChevronLeft, ChevronRight, Calendar, X, Clock } from "lucide-react";
 import { getHeatmapData } from "@/app/actions";
+import { getSessions } from "@/lib/storage/sessions";
 
 const INTENSITY_COLORS = [
   "bg-slate-800/50 text-slate-500", // 0 (Zero)
@@ -12,14 +15,55 @@ const INTENSITY_COLORS = [
 ];
 
 const WEEKDAYS = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SAB"];
-const MONTHS = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+const MONTHS = [
+  "Janeiro",
+  "Fevereiro",
+  "Março",
+  "Abril",
+  "Maio",
+  "Junho",
+  "Julho",
+  "Agosto",
+  "Setembro",
+  "Outubro",
+  "Novembro",
+  "Dezembro",
+];
+
+type RawSession = {
+  finished_at: string;
+  net_seconds: number;
+  subject: string;
+};
+
+type DayCell = {
+  day: number;
+  intensity: number;
+  isFuture: boolean;
+  totalSeconds: number;
+  details: { subject: string; time: string }[];
+};
+
+function formatDuration(seconds: number) {
+  const hours = Math.floor(seconds / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
+  if (hours > 0) return `${hours}h ${mins}m`;
+  if (mins > 0) return `${mins}m`;
+  return `${seconds}s`;
+}
 
 export function ConsistencyHeatmap() {
-  const [calendarData, setCalendarData] = useState<any[]>([]);
-  const [currentDate, setCurrentDate] = useState<{ day: number; month: number; year: number; monthName: string }>({
-    day: 1, month: 0, year: 2026, monthName: ""
-  });
-  const [selectedDayInfo, setSelectedDayInfo] = useState<any | null>(null);
+  const now = useMemo(() => new Date(), []);
+  const [viewYear, setViewYear] = useState(() => now.getFullYear());
+  const [viewMonth, setViewMonth] = useState(() => now.getMonth());
+  const [allSessions, setAllSessions] = useState<RawSession[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedDayInfo, setSelectedDayInfo] = useState<DayCell | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -31,169 +75,326 @@ export function ConsistencyHeatmap() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [selectedDayInfo]);
 
+  // Carrega TODO o histórico (Supabase + sessões salvas localmente no navegador), incluindo meses/anos anteriores
   useEffect(() => {
-    const loadData = async () => {
-      const now = new Date();
-      const cYear = now.getFullYear();
-      const cMonth = now.getMonth();
-      const cDay = now.getDate();
+    let cancelled = false;
+    const load = async () => {
+      setLoading(true);
+      try {
+        const remote = await getHeatmapData();
+        const local = getSessions();
 
-      setCurrentDate({
-        day: cDay,
-        month: cMonth,
-        year: cYear,
-        monthName: MONTHS[cMonth]
-      });
+        // Mescla sessões remotas e locais evitando duplicatas pelo par (minuto de término + segundos + matéria)
+        const seen = new Set<string>();
+        const merged: RawSession[] = [];
 
-      const daysInMonth = new Date(cYear, cMonth + 1, 0).getDate();
-      const firstDayOfWeek = new Date(cYear, cMonth, 1).getDay();
+        const pushUnique = (item: RawSession) => {
+          if (!item.finished_at || !item.net_seconds || item.net_seconds <= 0) return;
+          const d = new Date(item.finished_at);
+          if (isNaN(d.getTime())) return;
+          const minuteKey = d.toISOString().slice(0, 16);
+          const sig = `${minuteKey}|${item.net_seconds}|${(item.subject || "").trim().toLowerCase()}`;
+          if (seen.has(sig)) return;
+          seen.add(sig);
+          merged.push(item);
+        };
 
-      const blanks = Array.from({ length: firstDayOfWeek }).map(() => null);
-      
-      const rawSessions = await getHeatmapData();
-      
-      // Group sessions by day
-      const sessionsByDay: Record<number, { totalSeconds: number; details: { subject: string, time: string }[] }> = {};
-      
-      rawSessions.forEach(session => {
-        const sessionDate = new Date(session.finished_at);
-        if (sessionDate.getFullYear() === cYear && sessionDate.getMonth() === cMonth) {
-          const d = sessionDate.getDate();
-          if (!sessionsByDay[d]) {
-            sessionsByDay[d] = { totalSeconds: 0, details: [] };
-          }
-          sessionsByDay[d].totalSeconds += session.net_seconds;
-          
-          const hours = Math.floor(session.net_seconds / 3600);
-          const mins = Math.floor((session.net_seconds % 3600) / 60);
-          const timeStr = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
-          
-          sessionsByDay[d].details.push({ subject: session.subject, time: timeStr });
+        (remote || []).forEach((s: any) =>
+          pushUnique({
+            finished_at: s.finished_at,
+            net_seconds: Number(s.net_seconds) || 0,
+            subject: s.subject || "Estudo",
+          })
+        );
+
+        (local || []).forEach((s) =>
+          pushUnique({
+            finished_at: s.endedAt || s.startedAt,
+            net_seconds: Number(s.netSeconds) || 0,
+            subject: s.subject || "Estudo",
+          })
+        );
+
+        if (!cancelled) {
+          setAllSessions(merged);
         }
-      });
-
-      const days = Array.from({ length: daysInMonth }).map((_, i) => {
-        const dayNumber = i + 1;
-        
-        if (dayNumber > cDay) return { day: dayNumber, intensity: 0, isFuture: true, details: [] };
-
-        const dayData = sessionsByDay[dayNumber];
-        let intensity = 0;
-        let details: any[] = [];
-
-        if (dayData) {
-          const hours = dayData.totalSeconds / 3600;
-          if (hours > 0 && hours < 2) intensity = 1;
-          else if (hours >= 2 && hours < 4) intensity = 2;
-          else if (hours >= 4 && hours < 6) intensity = 3;
-          else if (hours >= 6) intensity = 4;
-          details = dayData.details;
-        }
-        
-        return { day: dayNumber, intensity, isFuture: false, details };
-      });
-
-      setCalendarData([...blanks, ...days]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     };
-    
-    loadData();
+
+    load();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  if (calendarData.length === 0) return null;
+  const isCurrentMonth = viewYear === now.getFullYear() && viewMonth === now.getMonth();
+
+  const goPrevMonth = () => {
+    setSelectedDayInfo(null);
+    if (viewMonth === 0) {
+      setViewMonth(11);
+      setViewYear((y) => y - 1);
+    } else {
+      setViewMonth((m) => m - 1);
+    }
+  };
+
+  const goNextMonth = () => {
+    if (isCurrentMonth) return;
+    setSelectedDayInfo(null);
+    if (viewMonth === 11) {
+      setViewMonth(0);
+      setViewYear((y) => y + 1);
+    } else {
+      setViewMonth((m) => m + 1);
+    }
+  };
+
+  const goToday = () => {
+    setSelectedDayInfo(null);
+    setViewYear(now.getFullYear());
+    setViewMonth(now.getMonth());
+  };
+
+  // Monta os dados do mês selecionado (atual ou meses passados)
+  const { calendarData, monthTotalSeconds, activeDaysCount } = useMemo(() => {
+    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+    const firstDayOfWeek = new Date(viewYear, viewMonth, 1).getDay();
+    const blanks: (DayCell | null)[] = Array.from({ length: firstDayOfWeek }).map(() => null);
+
+    const sessionsByDay: Record<
+      number,
+      { totalSeconds: number; bySubject: Record<string, number> }
+    > = {};
+
+    let monthSeconds = 0;
+
+    allSessions.forEach((session) => {
+      const d = new Date(session.finished_at);
+      if (d.getFullYear() === viewYear && d.getMonth() === viewMonth) {
+        const dayNum = d.getDate();
+        if (!sessionsByDay[dayNum]) {
+          sessionsByDay[dayNum] = { totalSeconds: 0, bySubject: {} };
+        }
+        sessionsByDay[dayNum].totalSeconds += session.net_seconds;
+        const subj = session.subject || "Estudo";
+        sessionsByDay[dayNum].bySubject[subj] =
+          (sessionsByDay[dayNum].bySubject[subj] || 0) + session.net_seconds;
+        monthSeconds += session.net_seconds;
+      }
+    });
+
+    const days: DayCell[] = Array.from({ length: daysInMonth }).map((_, i) => {
+      const dayNumber = i + 1;
+      const cellDate = new Date(viewYear, viewMonth, dayNumber);
+      const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+      const isFuture = cellDate > todayEnd;
+
+      const dayData = sessionsByDay[dayNumber];
+      let intensity = 0;
+      let details: { subject: string; time: string }[] = [];
+      let totalSeconds = 0;
+
+      if (dayData && !isFuture) {
+        totalSeconds = dayData.totalSeconds;
+        const hours = totalSeconds / 3600;
+        if (hours > 0 && hours < 2) intensity = 1;
+        else if (hours >= 2 && hours < 4) intensity = 2;
+        else if (hours >= 4 && hours < 6) intensity = 3;
+        else if (hours >= 6) intensity = 4;
+
+        details = Object.entries(dayData.bySubject)
+          .sort((a, b) => b[1] - a[1])
+          .map(([subject, secs]) => ({
+            subject,
+            time: formatDuration(secs),
+          }));
+      }
+
+      return { day: dayNumber, intensity, isFuture, totalSeconds, details };
+    });
+
+    return {
+      calendarData: [...blanks, ...days],
+      monthTotalSeconds: monthSeconds,
+      activeDaysCount: Object.keys(sessionsByDay).length,
+    };
+  }, [allSessions, viewYear, viewMonth, now]);
+
+  const monthHoursStr = (monthTotalSeconds / 3600).toFixed(1);
 
   return (
-    <div className="flex flex-col w-full max-w-md mx-auto relative h-full py-4 overflow-y-auto">
-      
-      {/* MODAL DE DETALHES DO DIA */}
-      {selectedDayInfo && (
-        <div 
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
-          onClick={() => setSelectedDayInfo(null)}
-        >
-          <div 
-            className="bg-slate-900 border border-slate-700 p-6 rounded-2xl w-full max-w-sm shadow-2xl relative animate-in fade-in zoom-in-95 duration-200"
-            onClick={(e) => e.stopPropagation()}
+    <div className="flex flex-col w-full max-w-md mx-auto relative h-full py-1">
+      {/* MODAL DE DETALHES DO DIA (via Portal para não ficar preso no card) */}
+      {mounted &&
+        selectedDayInfo &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[250] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+            onClick={() => setSelectedDayInfo(null)}
           >
-            <button 
-              onClick={() => setSelectedDayInfo(null)}
-              className="absolute top-4 right-4 text-slate-500 hover:text-white transition"
+            <div
+              className="bg-slate-900 border border-slate-700 p-6 rounded-2xl w-full max-w-sm shadow-2xl relative animate-in fade-in zoom-in-95 duration-200"
+              onClick={(e) => e.stopPropagation()}
             >
-              ✕
-            </button>
-            <h3 className="text-xl font-bold text-white mb-1">
-              Dia {selectedDayInfo.day} de {currentDate.monthName}
-            </h3>
-            
-            {selectedDayInfo.intensity === 0 ? (
-              <p className="text-slate-400 mt-4 text-sm">Você não registrou estudos neste dia.</p>
-            ) : (
-              <div className="mt-4 space-y-3">
-                <p className="text-xs text-amber-400 font-semibold uppercase tracking-wider mb-2">Sessões Concluídas</p>
-                {selectedDayInfo.details.map((d: any, idx: number) => (
-                  <div key={idx} className="flex justify-between items-center bg-slate-800/50 p-3 rounded-lg border border-slate-700/50">
-                    <span className="text-slate-300 text-sm font-medium">{d.subject}</span>
-                    <span className="text-emerald-400 text-sm font-bold">{d.time}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+              <button
+                type="button"
+                onClick={() => setSelectedDayInfo(null)}
+                className="absolute top-4 right-4 text-slate-500 hover:text-white transition p-1"
+              >
+                <X size={18} />
+              </button>
+              <h3 className="text-lg font-bold text-white">
+                Dia {selectedDayInfo.day} de {MONTHS[viewMonth]} de {viewYear}
+              </h3>
 
-      <div className="flex justify-between items-center mb-4 px-2 shrink-0">
-        <h4 className="text-lg font-semibold text-white tracking-wide">
-          {currentDate.monthName} <span className="text-slate-500 font-normal">{currentDate.year}</span>
-        </h4>
+              {selectedDayInfo.intensity === 0 ? (
+                <p className="text-slate-400 mt-4 text-sm">
+                  Nenhum estudo registrado neste dia.
+                </p>
+              ) : (
+                <div className="mt-4 space-y-3">
+                  <div className="flex items-center justify-between text-xs text-amber-400 font-semibold uppercase tracking-wider">
+                    <span>Matérias Estudadas</span>
+                    <span className="flex items-center gap-1">
+                      <Clock size={12} /> Total: {formatDuration(selectedDayInfo.totalSeconds)}
+                    </span>
+                  </div>
+                  <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                    {selectedDayInfo.details.map((d, idx) => (
+                      <div
+                        key={idx}
+                        className="flex justify-between items-center bg-slate-800/60 p-3 rounded-lg border border-slate-700/50 gap-2"
+                      >
+                        <span className="text-slate-200 text-xs font-medium break-words">
+                          {d.subject}
+                        </span>
+                        <span className="text-emerald-400 text-xs font-bold shrink-0">
+                          {d.time}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>,
+          document.body
+        )}
+
+      {/* Navegação entre meses (permite consultar meses passados) */}
+      <div className="flex justify-between items-center mb-3 px-1 shrink-0 gap-2">
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={goPrevMonth}
+            className="p-1.5 rounded-lg bg-slate-800/70 hover:bg-slate-700 text-slate-300 transition-colors"
+            title="Mês anterior"
+          >
+            <ChevronLeft size={16} />
+          </button>
+          <h4 className="text-sm sm:text-base font-semibold text-white tracking-wide min-w-[135px] text-center">
+            {MONTHS[viewMonth]} <span className="text-slate-500 font-normal">{viewYear}</span>
+          </h4>
+          <button
+            type="button"
+            onClick={goNextMonth}
+            disabled={isCurrentMonth}
+            className="p-1.5 rounded-lg bg-slate-800/70 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed text-slate-300 transition-colors"
+            title="Próximo mês"
+          >
+            <ChevronRight size={16} />
+          </button>
+          {!isCurrentMonth && (
+            <button
+              type="button"
+              onClick={goToday}
+              className="ml-1 px-2 py-1 rounded-md bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 text-[10px] font-bold uppercase tracking-wider"
+            >
+              Atual
+            </button>
+          )}
+        </div>
+
+        <div className="text-[11px] text-slate-400 text-right">
+          <span className="text-emerald-400 font-bold">{monthHoursStr}h</span> •{" "}
+          <span>{activeDaysCount}d ativos</span>
+        </div>
       </div>
 
-      <div className="grid grid-cols-7 gap-2 mb-2 shrink-0">
+      <div className="grid grid-cols-7 gap-1.5 mb-1.5 shrink-0">
         {WEEKDAYS.map((day, i) => (
-          <div key={i} className="text-center text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+          <div
+            key={i}
+            className="text-center text-[10px] font-bold text-slate-500 uppercase tracking-wider"
+          >
             {day}
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-2 shrink-0">
-        {calendarData.map((item, index) => {
-          if (!item) {
-            return <div key={index} className="aspect-square rounded-lg opacity-0" />;
-          }
-          
-          const isToday = item.day === currentDate.day;
-          const todayStyles = isToday ? "ring-2 ring-amber-500 ring-offset-2 ring-offset-slate-900 z-10 scale-105" : "";
+      {loading && allSessions.length === 0 ? (
+        <div className="flex-1 flex items-center justify-center text-xs text-slate-500 py-8">
+          Carregando histórico de consistência...
+        </div>
+      ) : (
+        <div className="grid grid-cols-7 gap-1.5 shrink-0">
+          {calendarData.map((item, index) => {
+            if (!item) {
+              return <div key={index} className="aspect-square rounded-lg opacity-0" />;
+            }
 
-          return (
-            <div
-              key={index}
-              onClick={() => {
-                if (!item.isFuture) setSelectedDayInfo(item);
-              }}
-              className={`aspect-square flex items-center justify-center rounded-lg text-sm transition-all duration-300 cursor-pointer 
-                ${!item.isFuture ? 'hover:scale-110' : 'opacity-40 cursor-not-allowed'} 
-                ${INTENSITY_COLORS[item.intensity]} 
-                ${todayStyles}`}
-              title={isToday ? "HOJE (Clique para ver detalhes)" : item.intensity > 0 ? `Dia ${item.day}: Nível de Foco ${item.intensity}` : `Dia ${item.day}`}
-            >
-              {item.day}
-            </div>
-          );
-        })}
-      </div>
-      
-      <div className="flex justify-center items-center gap-4 mt-6 text-[10px] text-slate-400 bg-slate-900/40 py-2 px-4 rounded-lg w-fit mx-auto border border-slate-800 shrink-0">
-        <div className="flex items-center gap-1.5" title="Não estudou">
-          <div className="w-2.5 h-2.5 rounded-sm bg-slate-800/50 border border-slate-700" /> <span>Zero</span>
+            const isToday = isCurrentMonth && item.day === now.getDate();
+            const todayStyles = isToday
+              ? "ring-2 ring-amber-500 ring-offset-1 ring-offset-slate-900 z-10"
+              : "";
+
+            return (
+              <button
+                type="button"
+                key={index}
+                disabled={item.isFuture}
+                onClick={() => {
+                  if (!item.isFuture) setSelectedDayInfo(item);
+                }}
+                className={`aspect-square flex items-center justify-center rounded-lg text-xs transition-all duration-200 ${
+                  !item.isFuture
+                    ? "hover:scale-105 cursor-pointer"
+                    : "opacity-35 cursor-not-allowed"
+                } ${INTENSITY_COLORS[item.intensity]} ${todayStyles}`}
+                title={
+                  isToday
+                    ? "HOJE (Clique para ver detalhes)"
+                    : item.intensity > 0
+                      ? `Dia ${item.day}: ${formatDuration(item.totalSeconds)}`
+                      : `Dia ${item.day}`
+                }
+              >
+                {item.day}
+              </button>
+            );
+          })}
         </div>
-        <div className="flex items-center gap-1.5" title="Menos de 2h">
-          <div className="w-2.5 h-2.5 rounded-sm bg-indigo-900/40 border border-indigo-800/50" /> <span>Leve</span>
+      )}
+
+      <div className="flex justify-center items-center gap-3 mt-4 text-[10px] text-slate-400 bg-slate-900/40 py-1.5 px-3 rounded-lg w-fit mx-auto border border-slate-800 shrink-0">
+        <div className="flex items-center gap-1" title="Não estudou">
+          <div className="w-2.5 h-2.5 rounded-sm bg-slate-800/50 border border-slate-700" />{" "}
+          <span>Zero</span>
         </div>
-        <div className="flex items-center gap-1.5" title="Entre 2h e 4h">
-          <div className="w-2.5 h-2.5 rounded-sm bg-indigo-500 shadow-[0_0_5px_rgba(99,102,241,0.5)]" /> <span className="text-indigo-200">Intenso</span>
+        <div className="flex items-center gap-1" title="Menos de 2h">
+          <div className="w-2.5 h-2.5 rounded-sm bg-indigo-900/40 border border-indigo-800/50" />{" "}
+          <span>Leve</span>
         </div>
-        <div className="flex items-center gap-1.5" title="Mais de 4h">
-          <div className="w-2.5 h-2.5 rounded-sm bg-amber-400 shadow-[0_0_5px_rgba(251,191,36,0.6)]" /> <span className="text-amber-400 font-bold">Extremo</span>
+        <div className="flex items-center gap-1" title="Entre 2h e 4h">
+          <div className="w-2.5 h-2.5 rounded-sm bg-indigo-500" />{" "}
+          <span className="text-indigo-200">Intenso</span>
+        </div>
+        <div className="flex items-center gap-1" title="Mais de 6h">
+          <div className="w-2.5 h-2.5 rounded-sm bg-amber-400" />{" "}
+          <span className="text-amber-400 font-bold">Extremo</span>
         </div>
       </div>
     </div>

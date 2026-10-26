@@ -37,10 +37,6 @@ export async function POST(request: Request) {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ 
-      model: 'gemini-3.6-flash',
-      generationConfig: { responseMimeType: "application/json" }
-    });
 
     let parts: any[] = [];
 
@@ -83,27 +79,24 @@ export async function POST(request: Request) {
     }
     `;
 
-    let result;
-    try {
-      result = await model.generateContent([prompt, ...parts]);
-    } catch (e: any) {
-      if (e.message && (e.message.includes('503') || e.message.includes('429'))) {
-        console.warn("Fallback to gemini-3.7-flash due to overload on 3.6-flash");
-        try {
-          const fallbackModel = genAI.getGenerativeModel({ model: 'gemini-3.7-flash' });
-          result = await fallbackModel.generateContent([prompt, ...parts]);
-        } catch (e2: any) {
-          console.warn("Fallback to gemini-3.5-flash due to overload on 3.7-flash");
-          const finalModel = genAI.getGenerativeModel({ model: 'gemini-3.5-flash' });
-          result = await finalModel.generateContent([prompt, ...parts]);
-        }
-      } else if (e.message && e.message.includes('404')) {
-        console.warn("Fallback to gemini-3.5-flash due to 404");
-        const fallbackModel = genAI.getGenerativeModel({ model: 'gemini-3.5-flash' });
-        result = await fallbackModel.generateContent([prompt, ...parts]);
-      } else {
-        throw e;
+    const candidateModels = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-3.6-flash', 'gemini-3.5-flash'];
+    let result: any = null;
+    let lastError: any = null;
+    for (const modelName of candidateModels) {
+      try {
+        const m = genAI.getGenerativeModel({
+          model: modelName,
+          generationConfig: { responseMimeType: "application/json" }
+        });
+        result = await m.generateContent([prompt, ...parts]);
+        break;
+      } catch (e: any) {
+        lastError = e;
+        console.warn(`Fallback from ${modelName}:`, e?.message);
       }
+    }
+    if (!result) {
+      throw lastError || new Error("Nenhum modelo Gemini disponível respondeu.");
     }
     const responseText = result.response.text();
     

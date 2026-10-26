@@ -247,13 +247,15 @@ export function PomodoroPanel({
     if (!isQueueMode && preset.kind !== "foco") {
       reset();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDone, notifiedForRun, remainingSeconds]);
 
-    // CLEANUP FUNCTION: Correção do Ciclo de Vida do Áudio (Prevenir Loop Infinito ao mudar de aba)
+  // Para o alarme caso o componente seja desmontado (ex: usuário mudou de página)
+  useEffect(() => {
     return () => {
       stopAlert();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDone, notifiedForRun, remainingSeconds]);
+  }, []);
 
   async function handleConfirmEndSession() {
     const now = new Date();

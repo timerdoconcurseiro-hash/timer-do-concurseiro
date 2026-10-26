@@ -72,9 +72,14 @@ export function TimerApp({ isVip = false }: { isVip?: boolean }) {
     const after = [...before, saved];
     setSessions(after);
 
-    // Sync to Supabase in the background
+    // Sync to Supabase in the background (separa "Disciplina (Tópico)")
+    const parenMatch = session.subject.match(/^(.+?)\s*\((.+)\)$/);
+    const cleanSubject = parenMatch ? parenMatch[1].trim() : session.subject;
+    const cleanTopic = parenMatch ? parenMatch[2].trim() : undefined;
+
     saveStudySession({
-      subject: session.subject,
+      subject: cleanSubject,
+      topic: cleanTopic,
       mode: session.mode,
       netSeconds: session.netSeconds,
       grossSeconds: session.netSeconds, // simplified for now
@@ -145,7 +150,7 @@ export function TimerApp({ isVip = false }: { isVip?: boolean }) {
           />
         </div>
         <div className={`w-full ${tab === "cronometro" ? "block" : "hidden"}`}>
-          <StopwatchPanel onSessionSaved={handleSaveSession} />
+          <StopwatchPanel soundOption={sound} onSessionSaved={handleSaveSession} />
         </div>
         <div className={`w-full ${tab === "historico" ? "block" : "hidden"}`}>
           <HistoryPanel sessions={sessions} onClearAll={handleClearAll} />

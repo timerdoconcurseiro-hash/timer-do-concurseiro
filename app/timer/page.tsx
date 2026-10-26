@@ -6,20 +6,21 @@ import { Suspense } from "react";
 
 export default async function TimerPage() {
   const profile = await getUserProfile();
+  const isVip = profile?.plan === 'premium' || profile?.plan === 'admin';
 
   return (
     <main className="flex flex-1 flex-col min-h-screen relative">
       <div className="absolute top-4 right-4 z-50">
         <Link 
-          href="/dashboard"
+          href={isVip ? "/vip" : "/dashboard"}
           className="flex items-center gap-2 bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-400 border border-indigo-500/20 px-4 py-2 rounded-full font-medium text-sm transition-colors"
         >
           <Sparkles size={16} />
-          {profile?.plan === 'premium' ? 'Dashboard VIP' : 'Área VIP'}
+          {isVip ? 'Área VIP' : 'Dashboard'}
         </Link>
       </div>
       <Suspense fallback={<div className="flex flex-1 items-center justify-center text-slate-400">Carregando Timer...</div>}>
-        <TimerApp isVip={profile?.plan === 'premium'} />
+        <TimerApp isVip={isVip} />
       </Suspense>
     </main>
   );

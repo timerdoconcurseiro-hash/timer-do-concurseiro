@@ -1,5 +1,17 @@
-import React from "react";
-import { BrainCircuit, Target, Headphones, Sparkles, Lock, ArrowLeft, BarChart3, Calendar, Radar, Book } from "lucide-react";
+import React, { Suspense } from "react";
+import {
+  BrainCircuit,
+  Target,
+  Headphones,
+  Sparkles,
+  ArrowLeft,
+  BarChart3,
+  Calendar,
+  Radar,
+  Book,
+  Flag,
+  Repeat,
+} from "lucide-react";
 import { EditalVerticalizado } from "@/components/dashboard/EditalVerticalizado";
 import { AmbientSounds } from "@/components/dashboard/AmbientSounds";
 import { FocusWrapper } from "@/components/dashboard/FocusWrapper";
@@ -7,33 +19,55 @@ import { AIStudyRoom } from "@/components/dashboard/AIStudyRoom";
 import { DailyMissions } from "@/components/dashboard/DailyMissions";
 import { RadarNegligencia } from "@/components/dashboard/RadarNegligencia";
 import { CaixaDeFlashcards } from "@/components/dashboard/CaixaDeFlashcards";
+import { EditalProjection } from "@/components/dashboard/EditalProjection";
+import { SpacedReviewsWidget } from "@/components/dashboard/SpacedReviewsWidget";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { getUserProfile, getEditalVerticalizado, getSubjectAnalytics } from "@/app/actions";
+import {
+  getUserProfile,
+  getEditalVerticalizado,
+  getSubjectAnalytics,
+  getEditalGoal,
+  getTotalStudiedHours,
+  getTodayReviews,
+  getRadarData,
+} from "@/app/actions";
 import { SubjectPieChart } from "@/components/dashboard/SubjectPieChart";
 import { ConsistencyHeatmap } from "@/components/dashboard/ConsistencyHeatmap";
 
 export default async function VIPPage() {
   const profile = await getUserProfile();
-  
+
   if (!profile) {
     redirect("/login");
   }
 
-  const isPremium = profile?.plan === 'premium';
+  const isPremium = profile?.plan === "premium" || profile?.plan === "admin";
 
   if (!isPremium) {
     redirect("/dashboard");
   }
 
-  const { data: editalData } = await getEditalVerticalizado();
-  const { data: chartData } = await getSubjectAnalytics();
+  const [
+    { data: editalData },
+    { data: chartData },
+    examGoal,
+    totalStudiedHours,
+    todayReviews,
+    radarData,
+  ] = await Promise.all([
+    getEditalVerticalizado(),
+    getSubjectAnalytics(),
+    getEditalGoal(),
+    getTotalStudiedHours(),
+    getTodayReviews(),
+    getRadarData(),
+  ]);
 
   return (
     <div className="min-h-screen w-full bg-[#090C15] text-slate-200 p-4 md:p-8 font-sans selection:bg-amber-500/30 overflow-y-auto">
       <div className="max-w-6xl w-full mx-auto space-y-8 pb-12">
-        
         {/* Header - VIP */}
         <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-4 border-b border-slate-800/60">
           <div>
@@ -47,12 +81,18 @@ export default async function VIPPage() {
               {profile.email} • MÓDULOS DE ALTA PERFORMANCE
             </p>
           </div>
-          
+
           <div className="flex items-center gap-4">
-            <Link href="/dashboard" className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm">
+            <Link
+              href="/dashboard"
+              className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm"
+            >
               <ArrowLeft size={16} /> Voltar ao Dashboard
             </Link>
-            <Link href="/timer" className="px-6 py-2.5 rounded-full border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 transition-all text-sm font-medium shadow-sm backdrop-blur-sm">
+            <Link
+              href="/timer"
+              className="px-6 py-2.5 rounded-full border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 transition-all text-sm font-medium shadow-sm backdrop-blur-sm"
+            >
               Ir para o Timer
             </Link>
           </div>
@@ -60,55 +100,121 @@ export default async function VIPPage() {
 
         {/* VIP Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          
           {/* Main Column */}
           <div className="lg:col-span-8 space-y-6">
-            
             {/* Top row in main column - Gráficos de Base */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FocusWrapper title={<><BarChart3 size={16} className="text-cyan-400" /> Alocação de Tempo</>}>
+              <FocusWrapper
+                title={
+                  <>
+                    <BarChart3 size={16} className="text-cyan-400" /> Alocação de Tempo
+                  </>
+                }
+              >
                 <div className="h-[250px] w-full">
                   <SubjectPieChart data={chartData} />
                 </div>
               </FocusWrapper>
 
-              <FocusWrapper title={<><Calendar size={16} className="text-indigo-400" /> Consistência</>}>
+              <FocusWrapper
+                title={
+                  <>
+                    <Calendar size={16} className="text-indigo-400" /> Consistência
+                  </>
+                }
+              >
                 <div className="w-full h-[250px] overflow-auto pb-2 scrollbar-thin scrollbar-thumb-slate-800 flex flex-col pt-4 px-2">
                   <ConsistencyHeatmap />
                 </div>
               </FocusWrapper>
             </div>
-            
-            <FocusWrapper title={<><Target size={16} className="text-emerald-400" /> Edital Verticalizado Inteligente</>}>
+
+            <FocusWrapper
+              title={
+                <>
+                  <Target size={16} className="text-emerald-400" /> Edital Verticalizado Inteligente
+                </>
+              }
+            >
               <EditalVerticalizado initialData={editalData || []} />
             </FocusWrapper>
 
-            <FocusWrapper title={<><Headphones size={16} className="text-amber-400" /> Sintetizador Binaural Focus</>}>
+            <FocusWrapper
+              title={
+                <>
+                  <Headphones size={16} className="text-amber-400" /> Sintetizador Binaural Focus
+                </>
+              }
+            >
               <AmbientSounds />
             </FocusWrapper>
 
-            <FocusWrapper title={<><BrainCircuit size={16} className="text-blue-400" /> Sala de Leitura IA (Gerador de Resumos e Flashcards)</>}>
-              <AIStudyRoom />
+            <FocusWrapper
+              id="ai-room"
+              title={
+                <>
+                  <BrainCircuit size={16} className="text-blue-400" /> Sala de Leitura IA (Gerador de Resumos e Flashcards)
+                </>
+              }
+            >
+              <Suspense fallback={<div className="text-sm text-slate-400 py-4">Carregando Sala de IA...</div>}>
+                <AIStudyRoom />
+              </Suspense>
             </FocusWrapper>
-            
           </div>
 
           {/* Right Column - Sidebars */}
           <div className="lg:col-span-4 space-y-6">
-            
-            <FocusWrapper title={<><Sparkles size={16} className="text-amber-400" /> Missões de Hoje (Cronograma)</>}>
+            <FocusWrapper
+              title={
+                <>
+                  <Flag size={16} className="text-amber-400" /> Projeção até a Prova
+                </>
+              }
+            >
+              <EditalProjection initialGoal={examGoal} totalHours={totalStudiedHours} />
+            </FocusWrapper>
+
+            <FocusWrapper
+              title={
+                <>
+                  <Sparkles size={16} className="text-amber-400" /> Missões de Hoje (Cronograma)
+                </>
+              }
+            >
               <DailyMissions initialData={editalData || []} />
             </FocusWrapper>
 
-            <FocusWrapper title={<><Radar size={16} className="text-red-400" /> Radar de Negligência</>}>
-              <RadarNegligencia />
+            <FocusWrapper
+              title={
+                <>
+                  <Repeat size={16} className="text-cyan-400" /> Revisões Espaçadas (1d • 7d • 30d)
+                </>
+              }
+            >
+              <SpacedReviewsWidget initialReviews={todayReviews || []} />
             </FocusWrapper>
 
-            <FocusWrapper title={<><Book size={16} className="text-fuchsia-400" /> Caixa de Flashcards</>}>
+            <FocusWrapper
+              title={
+                <>
+                  <Radar size={16} className="text-red-400" /> Radar de Negligência
+                </>
+              }
+            >
+              <RadarNegligencia initialData={radarData} />
+            </FocusWrapper>
+
+            <FocusWrapper
+              title={
+                <>
+                  <Book size={16} className="text-fuchsia-400" /> Caixa de Flashcards
+                </>
+              }
+            >
               <CaixaDeFlashcards />
             </FocusWrapper>
           </div>
-          
         </div>
       </div>
     </div>
