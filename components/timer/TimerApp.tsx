@@ -77,21 +77,26 @@ export function TimerApp({ isVip = false }: { isVip?: boolean }) {
   }, []);
 
   useEffect(() => {
-    setSessions(getSessions());
-    setGoalMinutes(getDailyGoalMinutes());
-    setStreakDays(getStreak().current);
-    try {
-      const savedSound = window.localStorage.getItem(SOUND_KEY) as SoundOption | null;
-      if (savedSound) setSound(savedSound);
-    } catch {
-      // localStorage unavailable — use default sound
-    }
-    setHydrated(true);
-    flushSyncQueue();
+    const timer = setTimeout(() => {
+      setSessions(getSessions());
+      setGoalMinutes(getDailyGoalMinutes());
+      setStreakDays(getStreak().current);
+      try {
+        const savedSound = window.localStorage.getItem(SOUND_KEY) as SoundOption | null;
+        if (savedSound) setSound(savedSound);
+      } catch {
+        // localStorage unavailable — use default sound
+      }
+      setHydrated(true);
+      flushSyncQueue();
+    }, 0);
 
     const onOnline = () => flushSyncQueue();
     window.addEventListener("online", onOnline);
-    return () => window.removeEventListener("online", onOnline);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("online", onOnline);
+    };
   }, [flushSyncQueue]);
 
   function handleSoundChange(value: SoundOption) {

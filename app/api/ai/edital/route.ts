@@ -38,21 +38,24 @@ export async function POST(request: Request) {
 
     const genAI = new GoogleGenerativeAI(apiKey);
 
-    let parts: any[] = [];
+    const parts: Array<
+      | { inlineData: { data: string; mimeType: string } }
+      | { text: string }
+    > = [];
 
     if (pdfBase64) {
       parts.push({
         inlineData: {
-          data: pdfBase64,
-          mimeType: "application/pdf"
-        }
+          data: String(pdfBase64),
+          mimeType: "application/pdf",
+        },
       });
       parts.push({
-        text: "Extraia o conteúdo programático do edital contido neste PDF."
+        text: "Extraia o conteúdo programático do edital contido neste PDF.",
       });
     } else {
       parts.push({
-        text: `Texto do edital:\n${syllabusText}`
+        text: `Texto do edital:\n${syllabusText}`,
       });
     }
 
@@ -79,26 +82,34 @@ export async function POST(request: Request) {
     }
     `;
 
-    const candidateModels = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-3.6-flash', 'gemini-3.5-flash'];
-    let result: any = null;
-    let lastError: any = null;
+    const candidateModels = [
+      "gemini-2.5-flash",
+      "gemini-2.0-flash",
+      "gemini-1.5-flash",
+      "gemini-3.6-flash",
+      "gemini-3.5-flash",
+    ];
+    let responseText = "";
+    let lastError: unknown = null;
     for (const modelName of candidateModels) {
       try {
         const m = genAI.getGenerativeModel({
           model: modelName,
-          generationConfig: { responseMimeType: "application/json" }
+          generationConfig: { responseMimeType: "application/json" },
         });
-        result = await m.generateContent([prompt, ...parts]);
+        const res = await m.generateContent([prompt, ...parts]);
+        responseText = res.response.text();
         break;
-      } catch (e: any) {
+      } catch (e: unknown) {
         lastError = e;
-        console.warn(`Fallback from ${modelName}:`, e?.message);
+        console.warn(`Fallback from ${modelName}:`, e instanceof Error ? e.message : String(e));
       }
     }
-    if (!result) {
-      throw lastError || new Error("Nenhum modelo Gemini disponível respondeu.");
+    if (!responseText) {
+      throw lastError instanceof Error
+        ? lastError
+        : new Error("Nenhum modelo Gemini disponível respondeu.");
     }
-    const responseText = result.response.text();
     
     // Tratamento para MD JSON retornado por modelos mais antigos
     let cleanText = responseText.trim();
@@ -119,8 +130,9 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ success: true, data: parsedData });
-  } catch (error: any) {
-    console.error('Erro ao gerar edital:', error);
-    return NextResponse.json({ error: error.message || 'Falha ao processar com IA.' }, { status: 500 });
+  } catch (error: unknown) {
+    console.error("Erro ao gerar edital:", error);
+    const message = error instanceof Error ? error.message : "Falha ao processar com IA.";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

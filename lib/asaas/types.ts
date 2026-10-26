@@ -36,6 +36,16 @@ export interface AsaasCustomer {
   externalReference?: string | null;
 }
 
+export interface AsaasPixQrCode {
+  encodedImage: string;
+  payload: string;
+  expirationDate?: string;
+}
+
+export interface AsaasCustomerListResponse {
+  data: AsaasCustomer[];
+}
+
 export interface AsaasWebhookBody {
   id?: string; // id do evento (ex.: "evt_...")
   event?: string;

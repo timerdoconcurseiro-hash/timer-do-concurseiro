@@ -1,4 +1,10 @@
-import type { AsaasCustomer, AsaasErrorItem, AsaasPayment } from "./types";
+import type {
+  AsaasCustomer,
+  AsaasCustomerListResponse,
+  AsaasErrorItem,
+  AsaasPayment,
+  AsaasPixQrCode,
+} from "./types";
 
 /**
  * Cliente HTTP tipado para a API v3 do Asaas (somente servidor).
@@ -71,6 +77,52 @@ async function asaasFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
 
 export function getCustomer(customerId: string) {
   return asaasFetch<AsaasCustomer>(`/customers/${encodeURIComponent(customerId)}`);
+}
+
+export function findCustomersByEmail(email: string) {
+  return asaasFetch<AsaasCustomerListResponse>(`/customers?email=${encodeURIComponent(email)}`);
+}
+
+export function createCustomer(input: {
+  name: string;
+  email: string;
+  cpfCnpj: string;
+  externalReference?: string;
+}) {
+  return asaasFetch<AsaasCustomer>(`/customers`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function updateCustomer(
+  customerId: string,
+  input: Partial<{ name: string; email: string; cpfCnpj: string; externalReference: string }>,
+) {
+  return asaasFetch<AsaasCustomer>(`/customers/${encodeURIComponent(customerId)}`, {
+    method: "PUT",
+    body: JSON.stringify(input),
+  });
+}
+
+export function createPixPayment(input: {
+  customer: string;
+  value: number;
+  dueDate: string;
+  description: string;
+  externalReference: string;
+}) {
+  return asaasFetch<AsaasPayment>(`/payments`, {
+    method: "POST",
+    body: JSON.stringify({
+      ...input,
+      billingType: "PIX",
+    }),
+  });
+}
+
+export function getPixQrCode(paymentId: string) {
+  return asaasFetch<AsaasPixQrCode>(`/payments/${encodeURIComponent(paymentId)}/pixQrCode`);
 }
 
 export function getPayment(paymentId: string) {

@@ -55,7 +55,10 @@ export default async function VIPPage() {
             </>
           }
         >
-          <EditalVerticalizado initialData={editalData || []} />
+          <EditalVerticalizado
+            initialData={editalData || []}
+            initialExamName={(profile as { exam_name?: string })?.exam_name}
+          />
         </FocusWrapper>
       </div>
     </div>

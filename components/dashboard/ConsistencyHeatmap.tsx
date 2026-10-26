@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { ChevronLeft, ChevronRight, Calendar, X, Clock } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Clock } from "lucide-react";
 import { getHeatmapData } from "@/app/actions";
 import { getSessions } from "@/lib/storage/sessions";
 
@@ -62,7 +62,8 @@ export function ConsistencyHeatmap() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    const t = setTimeout(() => setMounted(true), 0);
+    return () => clearTimeout(t);
   }, []);
 
   useEffect(() => {
@@ -99,7 +100,7 @@ export function ConsistencyHeatmap() {
           merged.push(item);
         };
 
-        (remote || []).forEach((s: any) =>
+        (remote || []).forEach((s: { finished_at: string; net_seconds: number; subject: string }) =>
           pushUnique({
             finished_at: s.finished_at,
             net_seconds: Number(s.net_seconds) || 0,

@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { X, Sparkles, Loader2 } from "lucide-react";
 
@@ -11,7 +10,6 @@ export function LeadCaptureModal() {
   const [email, setEmail] = useState("");
   const [consent, setConsent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
   
   const supabase = createClient();
 
@@ -21,11 +19,7 @@ export function LeadCaptureModal() {
 
     setIsLoading(true);
     try {
-      // In a real scenario, this would create an account or send a magic link.
-      // Here we assume standard passwordless or basic sign up. 
-      // For lead capture, we can sign up the user with a default password or magic link.
-      
-      const { data, error } = await supabase.auth.signInWithOtp({
+      const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
           data: {
@@ -40,19 +34,14 @@ export function LeadCaptureModal() {
       alert("Enviamos um link mágico para o seu e-mail! Clique nele para ativar seu Trial de 3 Dias.");
       setIsOpen(false);
       
-      // Note: The actual setting of trial_start and trial_end would ideally happen
-      // via a Supabase Trigger on user creation, or a webhook, to ensure security.
-      // For the frontend scope, if we were creating the user directly:
-      // We can also insert into a 'leads' table for tracking.
-      
       await supabase.from("leads").insert({
         name,
         email,
         consent_lgpd: consent
       });
 
-    } catch (error: any) {
-      alert("Erro: " + error.message);
+    } catch (error: unknown) {
+      alert("Erro: " + (error instanceof Error ? error.message : String(error)));
     } finally {
       setIsLoading(false);
     }

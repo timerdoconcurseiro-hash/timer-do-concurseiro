@@ -18,7 +18,8 @@ export function SubjectPieChart({ data }: { data?: { name: string; value: number
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    const t = setTimeout(() => setMounted(true), 0);
+    return () => clearTimeout(t);
   }, []);
 
   if (!mounted) return <div className="h-full w-full animate-pulse bg-slate-800/50 rounded-xl"></div>;
@@ -45,7 +46,7 @@ export function SubjectPieChart({ data }: { data?: { name: string; value: number
             <Tooltip
               cursor={{ fill: "#1E293B" }}
               contentStyle={{ backgroundColor: "#0F172A", borderColor: "#334155", borderRadius: "8px", color: "#F8FAFC" }}
-              formatter={(value: any) => [`${value}h líquidas`, "Tempo"]}
+              formatter={(value: unknown) => [`${String(value ?? 0)}h líquidas`, "Tempo"]}
             />
             <Bar dataKey="value" fill="#00E5FF" radius={[4, 4, 0, 0]} barSize={30} />
           </BarChart>
@@ -62,7 +63,7 @@ export function SubjectPieChart({ data }: { data?: { name: string; value: number
             <Radar name="Horas" dataKey="value" stroke="#8B5CF6" fill="#8B5CF6" fillOpacity={0.4} />
             <Tooltip
               contentStyle={{ backgroundColor: "#0F172A", borderColor: "#334155", borderRadius: "8px", color: "#F8FAFC" }}
-              formatter={(value: any) => [`${value}h líquidas`, "Tempo"]}
+              formatter={(value: unknown) => [`${String(value ?? 0)}h líquidas`, "Tempo"]}
             />
           </RadarChart>
         </ResponsiveContainer>

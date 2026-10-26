@@ -11,6 +11,8 @@ import {
 import { playAlert, unlockAudio, stopAlert, type SoundOption } from "@/lib/sounds/beep";
 import type { StudySession } from "@/lib/storage/sessions";
 import { useSearchParams } from "next/navigation";
+import { setTopicStatus, type TopicStatus } from "@/app/actions";
+import { TRAFFIC_LIGHT_META, TRAFFIC_LIGHT_ORDER } from "@/components/edital/TrafficLight";
 
 const PRESETS: PomodoroPreset[] = [
   { label: "25 min Foco", minutes: 25, kind: "foco" },
@@ -112,6 +114,7 @@ export function PomodoroPanel({
   const [correctAnswers, setCorrectAnswers] = useState("");
   const [totalQuestions, setTotalQuestions] = useState("");
   const [noQuestions, setNoQuestions] = useState(false);
+  const [selectedTopicStatus, setSelectedTopicStatus] = useState<TopicStatus | null>(null);
 
   // Persiste contexto sempre que mudar
   useEffect(() => {
@@ -127,48 +130,51 @@ export function PomodoroPanel({
 
     if (!initSubject && !initTopic && !initTopicId && !initDuration) return;
 
-    setCtx((prev) => {
-      const next = { ...prev };
-      if (initSubject) {
-        const known = SUBJECT_GROUPS.some((g) => g.options.includes(initSubject));
-        if (known) {
-          next.subjectCategory = initSubject;
-          next.customSubject = "";
-        } else {
-          next.subjectCategory = "outra";
-          next.customSubject = initSubject;
-        }
-      }
-      if (initTopic !== null && initTopic !== undefined) {
-        next.complement = initTopic;
-      }
-      if (initTopicId !== null && initTopicId !== undefined) {
-        next.topicId = initTopicId;
-      }
-      if (initDuration) {
-        const mins = Math.floor(Number(initDuration) / 60);
-        const newQueue: PomodoroPreset[] = [];
-        let remaining = mins;
-        while (remaining > 0) {
-          if (remaining >= 25) {
-            newQueue.push({ label: "25 min Foco", minutes: 25, kind: "foco" });
-            remaining -= 25;
-            if (remaining > 0) {
-              newQueue.push({ label: "5 min Pausa", minutes: 5, kind: "pausa" });
-            }
+    const timer = setTimeout(() => {
+      setCtx((prev) => {
+        const next = { ...prev };
+        if (initSubject) {
+          const known = SUBJECT_GROUPS.some((g) => g.options.includes(initSubject));
+          if (known) {
+            next.subjectCategory = initSubject;
+            next.customSubject = "";
           } else {
-            newQueue.push({ label: `${remaining} min Foco (Final)`, minutes: remaining, kind: "foco" });
-            remaining = 0;
+            next.subjectCategory = "outra";
+            next.customSubject = initSubject;
           }
         }
-        if (newQueue.length > 0) {
-          next.preset = newQueue[0];
-          next.queue = newQueue.slice(1);
-          next.isQueueMode = true;
+        if (initTopic !== null && initTopic !== undefined) {
+          next.complement = initTopic;
         }
-      }
-      return next;
-    });
+        if (initTopicId !== null && initTopicId !== undefined) {
+          next.topicId = initTopicId;
+        }
+        if (initDuration) {
+          const mins = Math.floor(Number(initDuration) / 60);
+          const newQueue: PomodoroPreset[] = [];
+          let remaining = mins;
+          while (remaining > 0) {
+            if (remaining >= 25) {
+              newQueue.push({ label: "25 min Foco", minutes: 25, kind: "foco" });
+              remaining -= 25;
+              if (remaining > 0) {
+                newQueue.push({ label: "5 min Pausa", minutes: 5, kind: "pausa" });
+              }
+            } else {
+              newQueue.push({ label: `${remaining} min Foco (Final)`, minutes: remaining, kind: "foco" });
+              remaining = 0;
+            }
+          }
+          if (newQueue.length > 0) {
+            next.preset = newQueue[0];
+            next.queue = newQueue.slice(1);
+            next.isQueueMode = true;
+          }
+        }
+        return next;
+      });
+    }, 0);
+    return () => clearTimeout(timer);
   }, [searchParams]);
 
   const durationMs = preset.minutes * 60 * 1000;
@@ -198,57 +204,60 @@ export function PomodoroPanel({
   useEffect(() => {
     if (!isDone || notifiedForRun || showEndModal) return;
 
-    setNotifiedForRun(true);
-    playAlert(soundOption);
+    const timer = setTimeout(() => {
+      setNotifiedForRun(true);
+      playAlert(soundOption);
 
-    if (
-      document.hidden &&
-      "Notification" in window &&
-      Notification.permission === "granted"
-    ) {
-      new Notification("Timer do Concurseiro", {
-        body:
-          preset.kind === "foco"
-            ? "Foco concluído! " + (queue.length > 0 ? "Hora da pausa." : "Sessão finalizada.")
-            : "Pausa concluída! Hora de voltar ao foco.",
-      });
-    }
-
-    if (preset.kind === "foco") {
-      if (isQueueMode && queue.length > 0) {
-        const now = new Date();
-        let finalSubject = subjectCategory === "outra" ? customSubject.trim() : subjectCategory;
-        if (!finalSubject) finalSubject = "Sem matéria definida";
-        const fullSubject = complement.trim() ? `${finalSubject} (${complement.trim()})` : finalSubject;
-
-        onSessionComplete({
-          subject: fullSubject,
-          mode: "pomodoro",
-          netSeconds: preset.minutes * 60,
-          startedAt: new Date(now.getTime() - preset.minutes * 60000).toISOString(),
-          endedAt: now.toISOString(),
-          topicId: topicId || null,
+      if (
+        document.hidden &&
+        "Notification" in window &&
+        Notification.permission === "granted"
+      ) {
+        new Notification("Timer do Concurseiro", {
+          body:
+            preset.kind === "foco"
+              ? "Foco concluído! " + (queue.length > 0 ? "Hora da pausa." : "Sessão finalizada.")
+              : "Pausa concluída! Hora de voltar ao foco.",
         });
+      }
 
-        const next = queue[0];
-        setCtx((prev) => ({ ...prev, preset: next, queue: prev.queue.slice(1) }));
-        reset();
-        setNotifiedForRun(false);
-        setTimeout(() => start(), 500);
+      if (preset.kind === "foco") {
+        if (isQueueMode && queue.length > 0) {
+          const now = new Date();
+          let finalSubject = subjectCategory === "outra" ? customSubject.trim() : subjectCategory;
+          if (!finalSubject) finalSubject = "Sem matéria definida";
+          const fullSubject = complement.trim() ? `${finalSubject} (${complement.trim()})` : finalSubject;
+
+          onSessionComplete({
+            subject: fullSubject,
+            mode: "pomodoro",
+            netSeconds: preset.minutes * 60,
+            startedAt: new Date(now.getTime() - preset.minutes * 60000).toISOString(),
+            endedAt: now.toISOString(),
+            topicId: topicId || null,
+          });
+
+          const next = queue[0];
+          setCtx((prev) => ({ ...prev, preset: next, queue: prev.queue.slice(1) }));
+          reset();
+          setNotifiedForRun(false);
+          setTimeout(() => start(), 500);
+        } else {
+          setShowEndModal(true);
+        }
       } else {
-        setShowEndModal(true);
+        if (isQueueMode && queue.length > 0) {
+          const next = queue[0];
+          setCtx((prev) => ({ ...prev, preset: next, queue: prev.queue.slice(1) }));
+          reset();
+          setNotifiedForRun(false);
+          setTimeout(() => start(), 500);
+        } else {
+          reset();
+        }
       }
-    } else {
-      if (isQueueMode && queue.length > 0) {
-        const next = queue[0];
-        setCtx((prev) => ({ ...prev, preset: next, queue: prev.queue.slice(1) }));
-        reset();
-        setNotifiedForRun(false);
-        setTimeout(() => start(), 500);
-      } else {
-        reset();
-      }
-    }
+    }, 0);
+    return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDone, notifiedForRun, showEndModal]);
 
@@ -299,10 +308,15 @@ export function PomodoroPanel({
       totalQuestions: noQuestions ? null : isNaN(parsedTotal) ? null : parsedTotal,
     });
 
+    if (topicId && selectedTopicStatus) {
+      setTopicStatus(topicId, selectedTopicStatus).catch(() => {});
+    }
+
     setShowEndModal(false);
     setCorrectAnswers("");
     setTotalQuestions("");
     setNoQuestions(false);
+    setSelectedTopicStatus(null);
 
     stopAlert();
     reset();
@@ -557,6 +571,35 @@ export function PomodoroPanel({
                 <p className="text-slate-400 text-sm">Sessão finalizada com sucesso!</p>
               )}
             </div>
+
+            {isVip && topicId && (
+              <div className="space-y-2 rounded-2xl border border-slate-800 bg-slate-900/60 p-3.5">
+                <p className="text-xs font-semibold text-slate-300">
+                  Como está seu domínio neste tópico? (Semáforo)
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {TRAFFIC_LIGHT_ORDER.map((st) => {
+                    const meta = TRAFFIC_LIGHT_META[st];
+                    const active = selectedTopicStatus === st;
+                    return (
+                      <button
+                        key={st}
+                        type="button"
+                        onClick={() => setSelectedTopicStatus(st)}
+                        className={`flex items-center gap-2 px-2.5 py-2 rounded-xl border text-xs font-medium transition-all ${
+                          active
+                            ? `${meta.pillClass} ring-2 ring-white/30`
+                            : "border-slate-800 bg-slate-950/60 text-slate-400 hover:text-slate-200"
+                        }`}
+                      >
+                        <span className={`h-3 w-3 rounded-full border ${meta.dotClass}`} />
+                        <span className="truncate">{meta.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {isVip && (
               <div className="space-y-4">
