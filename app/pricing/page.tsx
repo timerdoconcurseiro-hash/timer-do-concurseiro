@@ -50,7 +50,7 @@ export default function PricingPage() {
             Conheça nossas assinaturas - Lançamento em breve!
           </p>
           <p className="text-slate-400 max-w-2xl mx-auto text-md">
-            Desbloqueie projeções de edital, ciclos sugeridos por IA e sons binaurais. Foque no que importa: a sua aprovação.
+            Desbloqueie o Edital Verticalizado Inteligente com Semáforo de Domínio e horas líquidas por tópico. Foque no que importa: a sua aprovação.
           </p>
         </div>
 
@@ -67,10 +67,10 @@ export default function PricingPage() {
             <p className="text-slate-400 text-sm mt-2">Acesso premium sem compromisso longo.</p>
             
             <ul className="mt-8 space-y-4 flex-1">
-              <li className="flex gap-3 text-slate-300 text-sm"><CheckCircle2 className="text-indigo-400 shrink-0" size={18}/> Edital Mágico I.A. (Limites de uso justo)</li>
-              <li className="flex gap-3 text-slate-300 text-sm"><CheckCircle2 className="text-indigo-400 shrink-0" size={18}/> Sala de Leitura com Flashcards</li>
-              <li className="flex gap-3 text-slate-300 text-sm"><CheckCircle2 className="text-indigo-400 shrink-0" size={18}/> Smart Cycle (Revisão SM-2)</li>
-              <li className="flex gap-3 text-slate-300 text-sm"><CheckCircle2 className="text-indigo-400 shrink-0" size={18}/> Player Binaural Focus</li>
+              <li className="flex gap-3 text-slate-300 text-sm"><CheckCircle2 className="text-indigo-400 shrink-0" size={18}/> Edital Verticalizado com I.A.</li>
+              <li className="flex gap-3 text-slate-300 text-sm"><CheckCircle2 className="text-indigo-400 shrink-0" size={18}/> Semáforo de Domínio por Tópico</li>
+              <li className="flex gap-3 text-slate-300 text-sm"><CheckCircle2 className="text-indigo-400 shrink-0" size={18}/> Tempo Líquido Integrado ao Timer</li>
+              <li className="flex gap-3 text-slate-300 text-sm"><CheckCircle2 className="text-indigo-400 shrink-0" size={18}/> Métricas e Mapa de Consistência</li>
             </ul>
 
             <button 

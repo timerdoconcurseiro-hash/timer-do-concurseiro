@@ -15,7 +15,6 @@ import {
   Plus,
   Search,
   Play,
-  Brain,
   X,
   AlertCircle,
   Clock,
@@ -743,13 +742,6 @@ export function EditalVerticalizado({ initialData }: { initialData: EditalSubjec
                           title="Estudar este tópico no Timer"
                         >
                           <Play size={14} />
-                        </Link>
-                        <Link
-                          href={`/vip?subject=${encodeURIComponent(subject.name)}&topic=${encodeURIComponent(topic.name)}#ai-room`}
-                          className="p-1.5 rounded-md text-slate-400 hover:text-amber-400 hover:bg-amber-500/10"
-                          title="Gerar resumo/flashcards deste tópico"
-                        >
-                          <Brain size={14} />
                         </Link>
                         <button
                           type="button"

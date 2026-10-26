@@ -1,21 +1,26 @@
 "use client";
 
-import React from 'react';
-import Link from 'next/link';
-import { ArrowLeft, Target, Timer, BarChart3, Cloud, Save, Headphones, Brain, RotateCw } from 'lucide-react';
+import React from "react";
+import Link from "next/link";
+import { ArrowLeft, Target, Timer, Cloud, Save, CheckCircle, Clock } from "lucide-react";
 
 export default function ComoUsarPage() {
   return (
     <div className="min-h-screen bg-[#090C15] text-slate-200 py-12 px-4 selection:bg-indigo-500/30">
       <div className="max-w-4xl mx-auto space-y-12">
-        
         {/* Header */}
         <div className="text-center space-y-4">
-          <Link href="/" className="inline-flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm mb-6">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm mb-6"
+          >
             <ArrowLeft size={16} /> Voltar
           </Link>
           <h1 className="text-4xl md:text-5xl font-light text-white tracking-tight">
-            Guia Rápido: <span className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">Como Usar</span>
+            Guia Rápido:{" "}
+            <span className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">
+              Como Usar
+            </span>
           </h1>
           <p className="text-slate-400 max-w-2xl mx-auto text-lg">
             Aprenda a extrair o máximo do Timer do Concurseiro e transformar suas horas de estudo em aprovação.
@@ -24,7 +29,6 @@ export default function ComoUsarPage() {
 
         {/* Passo a Passo */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          
           <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-8 backdrop-blur-sm hover:border-slate-700 transition-colors">
             <div className="bg-indigo-500/10 w-12 h-12 rounded-xl flex items-center justify-center mb-6">
               <Target className="text-indigo-400" size={24} />
@@ -51,7 +55,7 @@ export default function ComoUsarPage() {
             </div>
             <h3 className="text-xl font-bold text-white mb-3">3. Registre a Matéria</h3>
             <p className="text-slate-400 text-sm leading-relaxed">
-              Assim que o tempo acabar ou você pausar, digite o nome da matéria (ex: Direito Constitucional) e clique em <strong>Salvar Sessão</strong>. Somente os minutos que você passou efetivamente com o timer rodando (horas líquidas) serão contabilizados.
+              Escolha a disciplina e o tópico, estude com foco e clique em <strong>Salvar Sessão</strong>. Somente os minutos em que o timer esteve efetivamente rodando (horas líquidas) são contabilizados.
             </p>
           </div>
 
@@ -59,44 +63,49 @@ export default function ComoUsarPage() {
             <div className="bg-purple-500/10 w-12 h-12 rounded-xl flex items-center justify-center mb-6">
               <Cloud className="text-purple-400" size={24} />
             </div>
-            <h3 className="text-xl font-bold text-white mb-3">4. Não perca seus dados</h3>
+            <h3 className="text-xl font-bold text-white mb-3">4. Sincronize na Nuvem</h3>
             <p className="text-slate-400 text-sm leading-relaxed">
-              O aplicativo salva os dados no seu navegador, mas se você limpar o cache, perderá tudo. Faça o <strong>Login Seguro com o Google</strong> para sincronizar todo o seu histórico e horas diretamente na nuvem!
+              O aplicativo funciona imediatamente no navegador, mesmo offline. Faça o <strong>Login Seguro com o Google</strong> para sincronizar todo o seu histórico e progresso de edital na nuvem!
             </p>
           </div>
-
         </div>
 
         {/* Secao Área VIP */}
         <div className="mt-12 bg-gradient-to-br from-indigo-900/20 to-slate-900/60 border border-indigo-500/30 rounded-3xl p-8 md:p-12 text-center md:text-left flex flex-col md:flex-row items-center gap-8">
           <div className="flex-1 space-y-4">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-bold uppercase tracking-wider mb-2">
-              Recurso Avançado
+              Área VIP Premium
             </div>
             <h3 className="text-2xl md:text-3xl font-bold text-white">
-              Extraia o máximo com o <br/>Dashboard Premium
+              Edital Verticalizado Inteligente
             </h3>
             <p className="text-slate-400">
-              Transforme seus dados salvos em aprovação matemática.
+              Transforme o conteúdo programático do seu concurso em um painel vivo de domínio e horas líquidas.
             </p>
             <ul className="space-y-3 mt-4">
               <li className="flex items-center justify-center md:justify-start gap-3 text-sm text-slate-300">
-                <Target size={18} className="text-emerald-400" /> <strong>Edital Verticalizado Inteligente:</strong> Nossa I.A mapeia seu edital e gera missões diárias de estudo.
+                <Target size={18} className="text-emerald-400 shrink-0" />{" "}
+                <span>
+                  <strong>Importação Mágica com I.A.:</strong> Envie o PDF ou cole o texto do edital para extrair matérias e tópicos automaticamente.
+                </span>
               </li>
               <li className="flex items-center justify-center md:justify-start gap-3 text-sm text-slate-300">
-                <Brain size={18} className="text-purple-400" /> <strong>Sala de Leitura IA + Flashcards:</strong> Cole seus textos e a IA cria Flashcards para você.
+                <CheckCircle size={18} className="text-amber-400 shrink-0" />{" "}
+                <span>
+                  <strong>Semáforo de Domínio:</strong> Marque cada tópico como Não iniciado, Não domino, Preciso revisar ou Domino.
+                </span>
               </li>
               <li className="flex items-center justify-center md:justify-start gap-3 text-sm text-slate-300">
-                <RotateCw size={18} className="text-fuchsia-400" /> <strong>Smart Cycle (Algoritmo SM-2):</strong> Um módulo de revisão em cards 3D que sabe exatamente quando você vai esquecer o conteúdo.
-              </li>
-              <li className="flex items-center justify-center md:justify-start gap-3 text-sm text-slate-300">
-                <Headphones size={18} className="text-amber-400" /> <strong>Sintetizador Binaural:</strong> Ondas Delta, Theta e Ruído Verde nativos para foco extremo.
+                <Clock size={18} className="text-cyan-400 shrink-0" />{" "}
+                <span>
+                  <strong>Integração Direta com o Timer:</strong> Inicie o estudo a partir do tópico e acumule o tempo estudado automaticamente.
+                </span>
               </li>
             </ul>
           </div>
-          
+
           <div className="w-full md:w-1/3">
-            <Link 
+            <Link
               href="/pricing"
               className="block w-full bg-indigo-600 hover:bg-indigo-500 text-white text-center py-4 rounded-full font-bold shadow-[0_0_30px_rgba(79,70,229,0.4)] transition-all transform hover:scale-105"
             >
@@ -104,7 +113,6 @@ export default function ComoUsarPage() {
             </Link>
           </div>
         </div>
-
       </div>
     </div>
   );

@@ -1,41 +1,11 @@
-import React, { Suspense } from "react";
-import {
-  BrainCircuit,
-  Target,
-  Headphones,
-  Sparkles,
-  ArrowLeft,
-  BarChart3,
-  Calendar,
-  Radar,
-  Book,
-  Flag,
-  Repeat,
-} from "lucide-react";
+import React from "react";
+import { Target, Sparkles, ArrowLeft } from "lucide-react";
 import { EditalVerticalizado } from "@/components/dashboard/EditalVerticalizado";
-import { AmbientSounds } from "@/components/dashboard/AmbientSounds";
 import { FocusWrapper } from "@/components/dashboard/FocusWrapper";
-import { AIStudyRoom } from "@/components/dashboard/AIStudyRoom";
-import { DailyMissions } from "@/components/dashboard/DailyMissions";
-import { RadarNegligencia } from "@/components/dashboard/RadarNegligencia";
-import { CaixaDeFlashcards } from "@/components/dashboard/CaixaDeFlashcards";
-import { EditalProjection } from "@/components/dashboard/EditalProjection";
-import { SpacedReviewsWidget } from "@/components/dashboard/SpacedReviewsWidget";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { isPremium } from "@/lib/plans";
-
-import {
-  getUserProfile,
-  getEditalVerticalizado,
-  getSubjectAnalytics,
-  getEditalGoal,
-  getTotalStudiedHours,
-  getTodayReviews,
-  getRadarData,
-} from "@/app/actions";
-import { SubjectPieChart } from "@/components/dashboard/SubjectPieChart";
-import { ConsistencyHeatmap } from "@/components/dashboard/ConsistencyHeatmap";
+import { getUserProfile, getEditalVerticalizado } from "@/app/actions";
 
 export default async function VIPPage() {
   const profile = await getUserProfile();
@@ -48,25 +18,11 @@ export default async function VIPPage() {
     redirect("/dashboard");
   }
 
-  const [
-    { data: editalData },
-    { data: chartData },
-    examGoal,
-    totalStudiedHours,
-    todayReviews,
-    radarData,
-  ] = await Promise.all([
-    getEditalVerticalizado(),
-    getSubjectAnalytics(),
-    getEditalGoal(),
-    getTotalStudiedHours(),
-    getTodayReviews(),
-    getRadarData(),
-  ]);
+  const { data: editalData } = await getEditalVerticalizado();
 
   return (
     <div className="min-h-screen w-full bg-[#090C15] text-slate-200 p-4 md:p-8 font-sans selection:bg-amber-500/30 overflow-y-auto">
-      <div className="max-w-6xl w-full mx-auto space-y-8 pb-12">
+      <div className="max-w-5xl w-full mx-auto space-y-8 pb-12">
         {/* Header - VIP */}
         <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-4 border-b border-slate-800/60">
           <div>
@@ -77,144 +33,30 @@ export default async function VIPPage() {
               </h1>
             </div>
             <p className="text-slate-500 text-sm font-medium tracking-wide">
-              {profile.email} • MÓDULOS DE ALTA PERFORMANCE
+              {profile.email} • EDITAL VERTICALIZADO INTELIGENTE
             </p>
           </div>
 
           <div className="flex items-center gap-4">
             <Link
-              href="/dashboard"
-              className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm"
-            >
-              <ArrowLeft size={16} /> Voltar ao Dashboard
-            </Link>
-            <Link
               href="/timer"
-              className="px-6 py-2.5 rounded-full border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 transition-all text-sm font-medium shadow-sm backdrop-blur-sm"
+              className="px-6 py-2.5 rounded-full border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 transition-all text-sm font-medium shadow-sm backdrop-blur-sm flex items-center gap-2"
             >
-              Ir para o Timer
+              <ArrowLeft size={16} /> Ir para o Timer
             </Link>
           </div>
         </header>
 
-        {/* VIP Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Main Column */}
-          <div className="lg:col-span-8 space-y-6">
-            {/* Top row in main column - Gráficos de Base */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FocusWrapper
-                title={
-                  <>
-                    <BarChart3 size={16} className="text-cyan-400" /> Alocação de Tempo
-                  </>
-                }
-              >
-                <div className="h-[250px] w-full">
-                  <SubjectPieChart data={chartData} />
-                </div>
-              </FocusWrapper>
-
-              <FocusWrapper
-                title={
-                  <>
-                    <Calendar size={16} className="text-indigo-400" /> Consistência
-                  </>
-                }
-              >
-                <div className="w-full h-[250px] overflow-auto pb-2 scrollbar-thin scrollbar-thumb-slate-800 flex flex-col pt-4 px-2">
-                  <ConsistencyHeatmap />
-                </div>
-              </FocusWrapper>
-            </div>
-
-            <FocusWrapper
-              title={
-                <>
-                  <Target size={16} className="text-emerald-400" /> Edital Verticalizado Inteligente
-                </>
-              }
-            >
-              <EditalVerticalizado initialData={editalData || []} />
-            </FocusWrapper>
-
-            <FocusWrapper
-              title={
-                <>
-                  <Headphones size={16} className="text-amber-400" /> Sintetizador Binaural Focus
-                </>
-              }
-            >
-              <AmbientSounds />
-            </FocusWrapper>
-
-            <FocusWrapper
-              id="ai-room"
-              title={
-                <>
-                  <BrainCircuit size={16} className="text-blue-400" /> Sala de Leitura IA (Gerador de Resumos e Flashcards)
-                </>
-              }
-            >
-              <Suspense fallback={<div className="text-sm text-slate-400 py-4">Carregando Sala de IA...</div>}>
-                <AIStudyRoom />
-              </Suspense>
-            </FocusWrapper>
-          </div>
-
-          {/* Right Column - Sidebars */}
-          <div className="lg:col-span-4 space-y-6">
-            <FocusWrapper
-              title={
-                <>
-                  <Flag size={16} className="text-amber-400" /> Projeção até a Prova
-                </>
-              }
-            >
-              <EditalProjection initialGoal={examGoal} totalHours={totalStudiedHours} />
-            </FocusWrapper>
-
-            <FocusWrapper
-              title={
-                <>
-                  <Sparkles size={16} className="text-amber-400" /> Missões de Hoje (Cronograma)
-                </>
-              }
-            >
-              <DailyMissions initialData={editalData || []} />
-            </FocusWrapper>
-
-            <FocusWrapper
-              title={
-                <>
-                  <Repeat size={16} className="text-cyan-400" /> Revisões Espaçadas (1d • 7d • 30d)
-                </>
-              }
-            >
-              <SpacedReviewsWidget initialReviews={todayReviews || []} />
-            </FocusWrapper>
-
-            <FocusWrapper
-              title={
-                <>
-                  <Radar size={16} className="text-red-400" /> Radar de Negligência
-                </>
-              }
-            >
-              <RadarNegligencia initialData={radarData} />
-            </FocusWrapper>
-
-            <FocusWrapper
-              title={
-                <>
-                  <Book size={16} className="text-fuchsia-400" /> Caixa de Flashcards
-                </>
-              }
-            >
-              <CaixaDeFlashcards />
-            </FocusWrapper>
-          </div>
-        </div>
+        {/* Edital Verticalizado Principal */}
+        <FocusWrapper
+          title={
+            <>
+              <Target size={16} className="text-emerald-400" /> Edital Verticalizado Inteligente
+            </>
+          }
+        >
+          <EditalVerticalizado initialData={editalData || []} />
+        </FocusWrapper>
       </div>
     </div>
   );
