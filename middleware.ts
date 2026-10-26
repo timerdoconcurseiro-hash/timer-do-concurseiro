@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { isPremium } from '@/lib/plans'
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -59,17 +60,17 @@ export async function middleware(request: NextRequest) {
 
     const { data: profile } = await supabase
       .from('profiles')
-      .select('plan, trial_end')
+      .select('*')
       .eq('id', user.id)
       .single()
 
     if (profile) {
-      const isPremium = profile.plan === 'premium' || profile.plan === 'admin'
+      const premium = isPremium(profile)
       const trialEnd = profile.trial_end ? new Date(profile.trial_end) : null
       const now = new Date()
 
       // Paywall Dinâmico: Se passou do trial e não é premium, redireciona para pricing (ou bloqueia)
-      if (!isPremium && trialEnd && now > trialEnd && !request.nextUrl.pathname.startsWith('/pricing')) {
+      if (!premium && trialEnd && now > trialEnd && !request.nextUrl.pathname.startsWith('/pricing')) {
         return NextResponse.redirect(new URL('/pricing?locked=true', request.url))
       }
     }
@@ -80,6 +81,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    // Webhooks e assets estáticos não precisam de sessão Supabase
+    '/((?!_next/static|_next/image|favicon.ico|api/webhooks|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }

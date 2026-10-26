@@ -9,6 +9,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { getUserProfile, getSubjectAnalytics } from "@/app/actions";
+import { isPremium } from "@/lib/plans";
 
 export default async function DashboardPage() {
   const profile = await getUserProfile();
@@ -19,9 +20,9 @@ export default async function DashboardPage() {
 
   const { data: chartData } = await getSubjectAnalytics();
   
-  const isPremium = profile?.plan === 'premium';
+  const premium = isPremium(profile);
 
-  if (isPremium) {
+  if (premium) {
     redirect("/vip");
   }
 
@@ -52,11 +53,6 @@ export default async function DashboardPage() {
             <Link href="/timer" className="px-6 py-2.5 rounded-full border border-slate-800 bg-slate-900/50 hover:bg-slate-800 hover:text-white transition-all text-sm font-medium text-slate-300 shadow-sm backdrop-blur-sm">
               Voltar para o Foco
             </Link>
-            {isPremium && (
-              <Link href="/vip" className="px-6 py-2.5 rounded-full border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 transition-all text-sm font-bold text-amber-400 shadow-sm backdrop-blur-sm flex items-center gap-2">
-                <Sparkles size={16} /> Acessar Área VIP
-              </Link>
-            )}
           </div>
         </header>
 

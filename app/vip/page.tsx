@@ -23,6 +23,7 @@ import { EditalProjection } from "@/components/dashboard/EditalProjection";
 import { SpacedReviewsWidget } from "@/components/dashboard/SpacedReviewsWidget";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { isPremium } from "@/lib/plans";
 
 import {
   getUserProfile,
@@ -43,9 +44,7 @@ export default async function VIPPage() {
     redirect("/login");
   }
 
-  const isPremium = profile?.plan === "premium" || profile?.plan === "admin";
-
-  if (!isPremium) {
+  if (!isPremium(profile)) {
     redirect("/dashboard");
   }
 

@@ -3,10 +3,11 @@ import Link from "next/link";
 import { Sparkles } from "lucide-react";
 import { getUserProfile } from "@/app/actions";
 import { Suspense } from "react";
+import { isPremium } from "@/lib/plans";
 
 export default async function TimerPage() {
   const profile = await getUserProfile();
-  const isVip = profile?.plan === 'premium' || profile?.plan === 'admin';
+  const isVip = isPremium(profile);
 
   return (
     <main className="flex flex-1 flex-col min-h-screen relative">
