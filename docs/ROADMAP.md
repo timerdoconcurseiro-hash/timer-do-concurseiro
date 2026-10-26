@@ -3,8 +3,8 @@
 > **Ponto de Restauração oficial do projeto.** Qualquer IA/sessão que assumir o projeto deve ler este arquivo **primeiro**, depois `AGENTS.md` (Next.js 16 tem breaking changes — consultar `node_modules/next/dist/docs/`).
 > Atualize a seção **"Log de Execução"** ao terminar cada pacote.
 
-- **Última atualização:** 2026-10-26 — v1.0 (Passos 0 a 9 implementados no código; aguardando execução da Migration 05 no Supabase pelo usuário)
-- **Passo atual:** ✅ Código concluído e validado (`tsc` = 0 erros, `eslint` = 0 erros/warnings). Falta apenas aplicar `db/migrations/05_pivot_edital_semaforo.sql` no SQL Editor do Supabase e configurar as variáveis `ASAAS_*` em produção.
+- **Última atualização:** 2026-10-26 — v1.1 (Passos 0 a 9 implementados no código e **Migration 05 executada e validada no Supabase**)
+- **Passo atual:** ✅ 100% Concluído (Código + Banco ativos). Pronto para testes E2E locais e deploy em produção.
 - **Stack:** Next.js 16.3.5 (App Router, `proxy.ts`) · React 19.2 · Tailwind 4 · Supabase (Auth + Postgres + RLS) · Asaas API v3 (Pix QR Code + Webhook autenticado) · Gemini (`@google/generative-ai`, importação de edital) · PWA (`@ducanh2912/next-pwa`)
 
 ---
@@ -63,7 +63,7 @@ docs/ROADMAP.md                   # Este documento de Handoff
 - ✅ **Passo 1 — Segurança do pagamento (hotfix):** `lib/supabase/admin.ts`, `lib/plans.ts`, `lib/asaas/*` e reescrita de `app/api/webhooks/asaas/route.ts`.
 - ✅ **Passo 2 — Limpeza de código zumbi:** remoção de componentes/rotas/deps descartados, migração `middleware.ts` → `proxy.ts`, remoção de `ignoreBuildErrors`.
 - ✅ **Passo 3 — Timer blindado (Versão Grátis):** persistência de `running` no reload, `session-context.ts`, alarme exato no Web Worker, `sync-queue.ts` offline idempotente, anel SVG e atalho `Espaço`.
-- ✅ **Passo 4 — Migration 05:** script SQL idempotente criado em `db/migrations/05_pivot_edital_semaforo.sql` *(aguardando execução no SQL Editor do Supabase pelo usuário)*.
+- ✅ **Passo 4 — Migration 05:** script SQL idempotente criado em `db/migrations/05_pivot_edital_semaforo.sql` e **executado com sucesso no Supabase**.
 - ✅ **Passo 5 — Edital (camada de dados):** `setTopicStatus`, `saveExamNameAction`, `saveGeneratedEdital` via RPC transacional com fallback, e agregação de `studied_seconds` por tópico.
 - ✅ **Passo 6 — Edital (UI e performance):** `TrafficLight`, `TopicRow`, `SubjectRow`, `EditalBoard` com `React.memo`, `useDeferredValue`, filtro por cor do semáforo e barra multicolorida.
 - ✅ **Passo 7 — Integração Timer ↔ Edital:** botão "Estudar" no tópico envia `topicId` ao Timer; modal de fim de sessão permite escolher a cor do semáforo e soma o tempo líquido no tópico.
@@ -81,7 +81,7 @@ docs/ROADMAP.md                   # Este documento de Handoff
 | `SUPABASE_SERVICE_ROLE_KEY` | `.env.local` / Vercel | Chave admin (usada exclusivamente no servidor pelo Webhook e Checkout) |
 | `ASAAS_API_URL` | `.env.local` / Vercel | `https://api-sandbox.asaas.com/v3` (testes) ou `https://api.asaas.com/v3` (produção) |
 | `ASAAS_API_KEY` | `.env.local` / Vercel | Chave da API Asaas (`$aact_...`) |
-| `ASAAS_WEBHOOK_TOKEN` | `.env.local` / Vercel | Segredo configurado no painel Asaas → Integrações → Webhooks → "Token de autenticação" |
+| `ASAAS_WEBHOOK_TOKEN` | `.env.local` / Vercel | Segredo configurado no painel Asaas → Integrações → Webhooks → "Token de autenticação" (também aceita o alias `ASAAS_WEBHOOK_ACCESS_TOKEN`) |
 | `NEXT_PUBLIC_SALES_OPEN` | `.env.local` / Vercel | `"true"` para habilitar os botões de compra na página `/pricing` |
 | `GEMINI_API_KEY` | `.env.local` / Vercel | Chave da API Google Gemini para importação de editais |
 

@@ -12,11 +12,12 @@ export const REVOKE_EVENTS = new Set([
 ]);
 
 /**
- * Compara o header `asaas-access-token` com ASAAS_WEBHOOK_TOKEN em tempo constante.
- * Falha FECHADO: sem token configurado, nenhuma requisição é aceita.
+ * Compara o header `asaas-access-token` com ASAAS_WEBHOOK_TOKEN (ou alias ASAAS_WEBHOOK_ACCESS_TOKEN)
+ * em tempo constante. Falha FECHADO: sem token configurado, nenhuma requisição é aceita.
  */
 export function isValidWebhookToken(received: string | null): boolean {
-  const expected = process.env.ASAAS_WEBHOOK_TOKEN;
+  const expected =
+    process.env.ASAAS_WEBHOOK_TOKEN || process.env.ASAAS_WEBHOOK_ACCESS_TOKEN;
   if (!expected || !received) return false;
   const a = Buffer.from(received, "utf8");
   const b = Buffer.from(expected, "utf8");
