@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 
 export async function saveStudySession(data: {
+  clientSessionId?: string;
   subject: string;
   topic?: string;
   mode: string;
@@ -10,6 +11,7 @@ export async function saveStudySession(data: {
   grossSeconds: number;
   startedAt: string;
   finishedAt: string;
+  editalTopicId?: string | null;
 }) {
   const supabase = await createClient();
 
@@ -26,11 +28,11 @@ export async function saveStudySession(data: {
   // 2. Verificar usuário logado
   const { data: authData } = await supabase.auth.getUser();
   if (!authData.user) {
-    return { success: false, error: "Usuário não autenticado." };
+    return { success: false, error: "Usuário não autenticado.", unauthenticated: true };
   }
 
-  // 3. Inserir na tabela
-  const { error } = await supabase.from("study_sessions").insert({
+  // 3. Inserir na tabela (com suporte às novas colunas se a migration já foi aplicada)
+  const baseRow: Record<string, unknown> = {
     user_id: authData.user.id,
     subject: data.subject,
     topic: data.topic,
@@ -39,9 +41,28 @@ export async function saveStudySession(data: {
     gross_seconds: data.grossSeconds,
     started_at: data.startedAt,
     finished_at: data.finishedAt,
-  });
+  };
+
+  const extendedRow: Record<string, unknown> = { ...baseRow };
+  if (data.clientSessionId) extendedRow.client_session_id = data.clientSessionId;
+  if (data.editalTopicId) extendedRow.edital_topic_id = data.editalTopicId;
+
+  const { error } = data.clientSessionId
+    ? await supabase
+        .from("study_sessions")
+        .upsert(extendedRow, { onConflict: "client_session_id", ignoreDuplicates: true })
+    : await supabase.from("study_sessions").insert(extendedRow);
 
   if (error) {
+    // Fallback caso as colunas client_session_id / edital_topic_id ainda não existam no banco
+    if (error.code === "42703" || error.code === "PGRST204" || error.code === "42P10") {
+      const { error: fallbackErr } = await supabase.from("study_sessions").insert(baseRow);
+      if (fallbackErr) {
+        console.error("Erro ao salvar sessão no Supabase (fallback):", fallbackErr);
+        return { success: false, error: fallbackErr.message };
+      }
+      return { success: true };
+    }
     console.error("Erro ao salvar sessão no Supabase:", error);
     return { success: false, error: error.message };
   }

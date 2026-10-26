@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { PomodoroPanel } from "./PomodoroPanel";
 import { StopwatchPanel } from "./StopwatchPanel";
 import { SoundSelect } from "./SoundSelect";
@@ -14,6 +14,12 @@ import {
   getSessions,
   type StudySession,
 } from "@/lib/storage/sessions";
+import {
+  dequeueSessionSync,
+  enqueueSessionSync,
+  loadSyncQueue,
+  type QueuedSessionPayload,
+} from "@/lib/storage/sync-queue";
 import {
   getDailyGoalMinutes,
   getStreak,
@@ -35,6 +41,40 @@ export function TimerApp({ isVip = false }: { isVip?: boolean }) {
   const [sound, setSound] = useState<SoundOption>("suave");
   const [showGoalModal, setShowGoalModal] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  const [syncBadge, setSyncBadge] = useState<"idle" | "syncing" | "saved" | "pending">("idle");
+  const flushingRef = useRef(false);
+
+  const flushSyncQueue = useCallback(async () => {
+    if (flushingRef.current) return;
+    const queue = loadSyncQueue();
+    if (queue.length === 0) return;
+
+    flushingRef.current = true;
+    setSyncBadge("syncing");
+    try {
+      for (const item of queue) {
+        const res = await saveStudySession(item);
+        if (res.success) {
+          dequeueSessionSync(item.clientSessionId);
+        } else if ((res as { unauthenticated?: boolean }).unauthenticated) {
+          // Usuário anônimo: mantém na fila caso faça login depois, sem mostrar erro
+          setSyncBadge("idle");
+          flushingRef.current = false;
+          return;
+        } else {
+          setSyncBadge("pending");
+          flushingRef.current = false;
+          return;
+        }
+      }
+      setSyncBadge("saved");
+      setTimeout(() => setSyncBadge("idle"), 2500);
+    } catch {
+      setSyncBadge("pending");
+    } finally {
+      flushingRef.current = false;
+    }
+  }, []);
 
   useEffect(() => {
     setSessions(getSessions());
@@ -47,8 +87,12 @@ export function TimerApp({ isVip = false }: { isVip?: boolean }) {
       // localStorage unavailable — use default sound
     }
     setHydrated(true);
-  }, []);
+    flushSyncQueue();
 
+    const onOnline = () => flushSyncQueue();
+    window.addEventListener("online", onOnline);
+    return () => window.removeEventListener("online", onOnline);
+  }, [flushSyncQueue]);
 
   function handleSoundChange(value: SoundOption) {
     setSound(value);
@@ -72,20 +116,24 @@ export function TimerApp({ isVip = false }: { isVip?: boolean }) {
     const after = [...before, saved];
     setSessions(after);
 
-    // Sync to Supabase in the background (separa "Disciplina (Tópico)")
     const parenMatch = session.subject.match(/^(.+?)\s*\((.+)\)$/);
     const cleanSubject = parenMatch ? parenMatch[1].trim() : session.subject;
     const cleanTopic = parenMatch ? parenMatch[2].trim() : undefined;
 
-    saveStudySession({
+    const payload: QueuedSessionPayload = {
+      clientSessionId: saved.id,
       subject: cleanSubject,
       topic: cleanTopic,
       mode: session.mode,
       netSeconds: session.netSeconds,
-      grossSeconds: session.netSeconds, // simplified for now
+      grossSeconds: session.netSeconds,
       startedAt: session.startedAt,
-      finishedAt: session.endedAt
-    }).catch(() => {});
+      finishedAt: session.endedAt,
+      editalTopicId: session.topicId ?? null,
+    };
+
+    enqueueSessionSync(payload);
+    flushSyncQueue();
 
     const { streak, justMet } = updateStreakAfterSession(
       before,
@@ -113,6 +161,23 @@ export function TimerApp({ isVip = false }: { isVip?: boolean }) {
         streakDays={streakDays}
         onChangeGoal={handleGoalChange}
       />
+
+      {syncBadge !== "idle" && (
+        <div
+          role="status"
+          className={`text-xs px-3 py-1 rounded-full border transition-all ${
+            syncBadge === "saved"
+              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+              : syncBadge === "syncing"
+              ? "border-sky-500/30 bg-sky-500/10 text-sky-300"
+              : "border-amber-500/30 bg-amber-500/10 text-amber-300"
+          }`}
+        >
+          {syncBadge === "saved" && "✓ Sincronizado na nuvem"}
+          {syncBadge === "syncing" && "Sincronizando sessão..."}
+          {syncBadge === "pending" && "Salvo no dispositivo (sincronizará quando online)"}
+        </div>
+      )}
 
       <nav className="flex gap-1 rounded-2xl border border-app-border bg-app-surface p-1">
         {(
@@ -146,11 +211,16 @@ export function TimerApp({ isVip = false }: { isVip?: boolean }) {
           <PomodoroPanel
             soundOption={sound}
             isVip={isVip}
+            isActiveTab={tab === "temporizador"}
             onSessionComplete={handleSaveSession}
           />
         </div>
         <div className={`w-full ${tab === "cronometro" ? "block" : "hidden"}`}>
-          <StopwatchPanel soundOption={sound} onSessionSaved={handleSaveSession} />
+          <StopwatchPanel
+            soundOption={sound}
+            isActiveTab={tab === "cronometro"}
+            onSessionSaved={handleSaveSession}
+          />
         </div>
         <div className={`w-full ${tab === "historico" ? "block" : "hidden"}`}>
           <HistoryPanel sessions={sessions} onClearAll={handleClearAll} />

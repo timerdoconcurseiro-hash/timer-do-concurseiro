@@ -5,6 +5,7 @@ export interface StudySession {
   netSeconds: number;
   startedAt: string;
   endedAt: string;
+  topicId?: string | null;
   correctAnswers?: number | null;
   totalQuestions?: number | null;
 }
