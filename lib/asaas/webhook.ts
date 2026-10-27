@@ -1,5 +1,5 @@
 import { timingSafeEqual } from "node:crypto";
-import { isPlanCode, type PlanCode } from "@/lib/plans";
+import { isPlanCode, PLAN_CATALOG, type PlanCode } from "@/lib/plans";
 
 /** Eventos que liberam acesso. */
 export const GRANT_EVENTS = new Set(["PAYMENT_RECEIVED", "PAYMENT_CONFIRMED"]);
@@ -26,26 +26,56 @@ export function isValidWebhookToken(received: string | null): boolean {
 }
 
 /**
- * externalReference gerado pelo nosso checkout: "tdc:<userId>:<planCode>".
- * Mantém compatibilidade com um UUID puro.
+ * externalReference gerado pelo nosso checkout:
+ * "tdc:<userId>:<planCode>:<daysDuration>:<maxContests>".
+ * Mantém compatibilidade com formatos anteriores ("tdc:<userId>:<planCode>" ou UUID puro).
  */
 export function buildExternalReference(userId: string, plan: PlanCode): string {
-  return `tdc:${userId}:${plan}`;
+  const cfg = PLAN_CATALOG[plan];
+  return `tdc:${userId}:${plan}:${cfg.durationDays}:${cfg.maxContests}`;
 }
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+export interface ParsedExternalReference {
+  userId: string | null;
+  plan: PlanCode | null;
+  daysDuration: number | null;
+  maxContests: number | null;
+}
+
 export function parseExternalReference(
   ref: string | null | undefined,
-): { userId: string | null; plan: PlanCode | null } {
-  if (!ref || typeof ref !== "string") return { userId: null, plan: null };
+): ParsedExternalReference {
+  if (!ref || typeof ref !== "string") {
+    return { userId: null, plan: null, daysDuration: null, maxContests: null };
+  }
   const parts = ref.split(":");
   if (parts[0] === "tdc" && parts.length >= 2) {
     const userId = UUID_RE.test(parts[1]) ? parts[1] : null;
     const plan = isPlanCode(parts[2]) ? parts[2] : null;
-    return { userId, plan };
+    const rawDays = parts[3] ? Number(parts[3]) : NaN;
+    const rawMax = parts[4] ? Number(parts[4]) : NaN;
+    const daysDuration =
+      Number.isFinite(rawDays) && rawDays > 0
+        ? rawDays
+        : plan
+          ? PLAN_CATALOG[plan].durationDays
+          : null;
+    const maxContests =
+      Number.isFinite(rawMax) && rawMax > 0
+        ? rawMax
+        : plan
+          ? PLAN_CATALOG[plan].maxContests
+          : null;
+    return { userId, plan, daysDuration, maxContests };
   }
-  return { userId: UUID_RE.test(ref) ? ref : null, plan: null };
+  return {
+    userId: UUID_RE.test(ref) ? ref : null,
+    plan: null,
+    daysDuration: null,
+    maxContests: null,
+  };
 }
 
 /** Códigos PostgREST/Postgres para "objeto ainda não existe" (migration não aplicada). */

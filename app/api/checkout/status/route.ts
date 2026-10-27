@@ -3,7 +3,13 @@ import { createClient } from "@/lib/supabase/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getPayment, isAsaasConfigured } from "@/lib/asaas/client";
 import { isMissingColumn, parseExternalReference } from "@/lib/asaas/webhook";
-import { computeExpiry, isPremium, planCodeFromValue, type PlanCode } from "@/lib/plans";
+import {
+  computeExpiry,
+  isPremium,
+  PLAN_CATALOG,
+  planCodeFromValue,
+  type PlanCode,
+} from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
 
@@ -47,23 +53,45 @@ export async function GET(request: Request) {
       payment.status === "RECEIVED_IN_CASH"
     ) {
       // Liberação proativa caso o webhook ainda esteja na fila
-      const planCode: PlanCode = ref.plan ?? planCodeFromValue(payment.value) ?? "mensal";
+      const planCode: PlanCode = ref.plan ?? planCodeFromValue(payment.value) ?? "sprint";
+      const daysDuration = ref.daysDuration ?? PLAN_CATALOG[planCode].durationDays;
+      const maxContests = ref.maxContests ?? PLAN_CATALOG[planCode].maxContests;
+      const currentExpires =
+        (profile as { vip_expires_at?: string | null; plan_expires_at?: string | null } | null)
+          ?.vip_expires_at ??
+        (profile as { plan_expires_at?: string | null } | null)?.plan_expires_at;
+
       const expiresAt = computeExpiry(
         planCode,
-        (profile as { plan_expires_at?: string | null } | null)?.plan_expires_at,
+        currentExpires,
         profile?.plan,
+        Date.now(),
+        daysDuration,
       );
 
       const { error } = await supabaseAdmin
         .from("profiles")
-        .update({ plan: "premium", plan_expires_at: expiresAt })
+        .update({
+          plan: "premium",
+          plan_expires_at: expiresAt,
+          is_vip: true,
+          vip_plan: planCode,
+          max_contests: maxContests,
+          vip_expires_at: expiresAt,
+        })
         .eq("id", authData.user.id);
 
       if (error && isMissingColumn(error.code)) {
-        await supabaseAdmin
+        const { error: err05 } = await supabaseAdmin
           .from("profiles")
-          .update({ plan: "premium" })
+          .update({ plan: "premium", plan_expires_at: expiresAt })
           .eq("id", authData.user.id);
+        if (err05 && isMissingColumn(err05.code)) {
+          await supabaseAdmin
+            .from("profiles")
+            .update({ plan: "premium" })
+            .eq("id", authData.user.id);
+        }
       }
 
       return NextResponse.json({ paid: true, status: payment.status });

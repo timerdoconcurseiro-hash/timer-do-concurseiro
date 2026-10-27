@@ -11,7 +11,12 @@ import {
   isValidWebhookToken,
   parseExternalReference,
 } from "@/lib/asaas/webhook";
-import { computeExpiry, planCodeFromValue, type PlanCode } from "@/lib/plans";
+import {
+  computeExpiry,
+  PLAN_CATALOG,
+  planCodeFromValue,
+  type PlanCode,
+} from "@/lib/plans";
 
 /**
  * Webhook do Asaas.
@@ -29,6 +34,10 @@ type ProfileRow = {
   email: string | null;
   plan: string | null;
   plan_expires_at?: string | null;
+  is_vip?: boolean | null;
+  vip_plan?: string | null;
+  vip_expires_at?: string | null;
+  max_contests?: number | null;
 };
 
 class TransientError extends Error {}
@@ -100,14 +109,26 @@ export async function POST(request: Request) {
       }
       let planCode: PlanCode | null = ref.plan ?? planCodeFromValue(payment.value);
       if (!planCode) {
-        console.warn(`[Asaas Webhook] Valor ${payment.value} não corresponde a nenhum plano; aplicando "mensal".`);
-        planCode = "mensal";
+        console.warn(`[Asaas Webhook] Valor ${payment.value} não corresponde a nenhum plano; aplicando "sprint".`);
+        planCode = "sprint";
       }
-      await grantPremium(supabase, profile, planCode, payment.customer);
-      console.log(`[Asaas Webhook] Premium (${planCode}) liberado para user=${profile.id}`);
+      const daysDuration = ref.daysDuration ?? PLAN_CATALOG[planCode].durationDays;
+      const maxContests = ref.maxContests ?? PLAN_CATALOG[planCode].maxContests;
+
+      await grantPremium(
+        supabase,
+        profile,
+        planCode,
+        daysDuration,
+        maxContests,
+        payment.customer,
+      );
+      console.log(
+        `[Asaas Webhook] VIP (${planCode}, ${daysDuration}d, max=${maxContests}) liberado para user=${profile.id}`,
+      );
     } else {
       await revokePremium(supabase, profile);
-      console.log(`[Asaas Webhook] Acesso revogado (${event}) para user=${profile.id}`);
+      console.log(`[Asaas Webhook] Acesso VIP revogado (${event}) para user=${profile.id}`);
     }
 
     if (ledgerEnabled) await markProcessed(supabase, eventId, profile.id, null);
@@ -260,22 +281,38 @@ async function resolveProfile(
 }
 
 // ---------------------------------------------------------------------------
-// Efeitos no perfil (com fallback caso as colunas da migration 05 ainda não existam)
+// Efeitos no perfil (com fallback caso as colunas da migration 05/06 ainda não existam)
 // ---------------------------------------------------------------------------
 
 async function updateProfile(
   supabase: SupabaseClient,
   userId: string,
   full: Record<string, unknown>,
+  fallback05: Record<string, unknown>,
   minimal: Record<string, unknown>,
 ) {
   if (Object.keys(full).length === 0) return;
   const { error } = await supabase.from("profiles").update(full).eq("id", userId);
   if (!error) return;
   if (isMissingColumn(error.code)) {
-    console.warn("[Asaas Webhook] Colunas de assinatura ausentes — rode a migration 05. Aplicando update mínimo.");
+    console.warn(
+      "[Asaas Webhook] Algumas colunas VIP ausentes (rode a migration 06). Tentando fallback da migration 05.",
+    );
+    if (Object.keys(fallback05).length > 0) {
+      const { error: err05 } = await supabase
+        .from("profiles")
+        .update(fallback05)
+        .eq("id", userId);
+      if (!err05) return;
+      if (!isMissingColumn(err05.code)) {
+        throw new TransientError(`profiles update (fallback05): ${err05.message}`);
+      }
+    }
     if (Object.keys(minimal).length === 0) return;
-    const { error: retryError } = await supabase.from("profiles").update(minimal).eq("id", userId);
+    const { error: retryError } = await supabase
+      .from("profiles")
+      .update(minimal)
+      .eq("id", userId);
     if (!retryError) return;
     throw new TransientError(`profiles update (mínimo): ${retryError.message}`);
   }
@@ -286,16 +323,48 @@ async function grantPremium(
   supabase: SupabaseClient,
   profile: ProfileRow,
   planCode: PlanCode,
+  daysDuration: number,
+  maxContests: number,
   customerId: string | undefined,
 ) {
   const isAdmin = profile.plan === "admin";
+  const currentExpires = profile.vip_expires_at ?? profile.plan_expires_at;
+  const expiresAt = computeExpiry(
+    planCode,
+    currentExpires,
+    profile.plan,
+    Date.now(),
+    daysDuration,
+  );
+  const nextMaxContests = Math.max(profile.max_contests ?? 0, maxContests);
+
   const full: Record<string, unknown> = {};
-  if (customerId) full.asaas_customer_id = customerId;
+  const fallback05: Record<string, unknown> = {};
+
+  if (customerId) {
+    full.asaas_customer_id = customerId;
+    fallback05.asaas_customer_id = customerId;
+  }
+
   if (!isAdmin) {
     full.plan = "premium";
-    full.plan_expires_at = computeExpiry(planCode, profile.plan_expires_at, profile.plan);
+    full.plan_expires_at = expiresAt;
+    full.is_vip = true;
+    full.vip_plan = planCode;
+    full.max_contests = nextMaxContests;
+    full.vip_expires_at = expiresAt;
+
+    fallback05.plan = "premium";
+    fallback05.plan_expires_at = expiresAt;
   }
-  await updateProfile(supabase, profile.id, full, isAdmin ? {} : { plan: "premium" });
+
+  await updateProfile(
+    supabase,
+    profile.id,
+    full,
+    fallback05,
+    isAdmin ? {} : { plan: "premium" },
+  );
 }
 
 async function revokePremium(supabase: SupabaseClient, profile: ProfileRow) {
@@ -303,6 +372,14 @@ async function revokePremium(supabase: SupabaseClient, profile: ProfileRow) {
   await updateProfile(
     supabase,
     profile.id,
+    {
+      plan: "free",
+      plan_expires_at: null,
+      is_vip: false,
+      vip_plan: null,
+      max_contests: 0,
+      vip_expires_at: null,
+    },
     { plan: "free", plan_expires_at: null },
     { plan: "free" },
   );

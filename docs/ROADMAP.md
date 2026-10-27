@@ -3,19 +3,19 @@
 > **Ponto de Restauração oficial do projeto.** Qualquer IA/sessão que assumir o projeto deve ler este arquivo **primeiro**, depois `AGENTS.md` (Next.js 16 tem breaking changes — consultar `node_modules/next/dist/docs/`).
 > Atualize a seção **"Log de Execução"** ao terminar cada pacote.
 
-- **Última atualização:** 2026-10-26 — v1.1 (Passos 0 a 9 implementados no código e **Migration 05 executada e validada no Supabase**)
-- **Passo atual:** ✅ 100% Concluído (Código + Banco ativos). Pronto para testes E2E locais e deploy em produção.
+- **Última atualização:** 2026-10-27 — v1.2 (Nova página comercial `/pricing`, tiers `sprint`/`combo`/`anual`, cupom `LANCAMENTO` e Migration 06)
+- **Passo atual:** ✅ 100% Concluído (Código + Fluxo Comercial Pix). Rodar `db/migrations/06_pricing_tiers.sql` no Supabase para habilitar colunas explícitas `is_vip`, `vip_plan`, `max_contests`, `vip_expires_at` (com fallback automático caso ainda não tenha sido rodada).
 - **Stack:** Next.js 16.3.5 (App Router, `proxy.ts`) · React 19.2 · Tailwind 4 · Supabase (Auth + Postgres + RLS) · Asaas API v3 (Pix QR Code + Webhook autenticado) · Gemini (`@google/generative-ai`, importação de edital) · PWA (`@ducanh2912/next-pwa`)
 
 ---
 
-## 1. Status Atual (Pós-Implementação — 2026-10-26)
+## 1. Status Atual (Pós-Implementação — 2026-10-27)
 
 ### 1.1 O que já foi limpo e o que está funcionando
 | Área | Estado |
 |---|---|
-| **Segurança e Webhook Asaas** | ✅ `app/api/webhooks/asaas/route.ts` valida `asaas-access-token` com `timingSafeEqual`, resolve usuário por `externalReference` (`tdc:<userId>:<planCode>`) → `asaas_customer_id` → API `/customers/{id}`, registra auditoria/idempotência em `payment_events` e trata estornos/chargebacks. |
-| **Checkout Pix Nativo (Fricção Zero)** | ✅ `POST /api/checkout/pix` + `GET /api/checkout/status` + `components/billing/PixCheckoutModal.tsx`. Gera QR Code e Pix Copia-e-Cola na tela, faz polling a cada 3s e libera a Área VIP automaticamente. |
+| **Segurança e Webhook Asaas** | ✅ `app/api/webhooks/asaas/route.ts` valida `asaas-access-token` com `timingSafeEqual`, resolve usuário por `externalReference` (`tdc:<userId>:<planCode>:<daysDuration>:<maxContests>`) → `asaas_customer_id` → API `/customers/{id}`, atualiza `is_vip`, `vip_plan`, `max_contests`, `vip_expires_at` (e `plan`/`plan_expires_at`), registra auditoria/idempotência em `payment_events` e trata estornos (`PAYMENT_REFUNDED`/chargebacks). |
+| **Precificação por Ciclos & Checkout Pix Nativo** | ✅ Tiers `sprint` (R$ 14,90 / 120d / 1 edital), `combo` (R$ 24,90 / 180d / 3 editais — destaque) e `anual` (R$ 47,90 / 365d / ilimitado) + cupom `LANCAMENTO` (R$ 9,90 no `combo`). UI Dark Mode (`bg-slate-950`) em `components/billing/PricingSection.tsx`, rotas `/pricing` e `/checkout`, e modal `PixCheckoutModal.tsx`. |
 | **Limpeza de Código Zumbi** | ✅ Removidos: `AIStudyRoom`, `FlashcardViewer`, `CaixaDeFlashcards`, `AmbientSounds`, `SpacedReviewsWidget`, `DailyMissions`, `RadarNegligencia`, `EditalProjection`, `lib/storage/decks.ts`, `app/api/ai/study`, `app/api/ai/models`, `upgrade_admin.js`, `db/schema.ts` e deps não utilizadas (`drizzle-orm`, `drizzle-kit`, `postgres`). Tabelas legadas no banco foram preservadas sem uso (Decisão D3). |
 | **Next.js 16 `proxy.ts` + Strict TS** | ✅ `middleware.ts` migrado para `proxy.ts` (excluindo `/api/webhooks` do matcher). Removido `typescript.ignoreBuildErrors` do `next.config.ts`. Zero erros de TypeScript e ESLint em todo o repositório. |
 | **Timer do Concurseiro (Versão Grátis)** | ✅ `useTimerEngine` mantém `running: true` em reloads (timestamp absoluto), Web Worker agenda timeout exato de alarme, sincroniza entre abas via `storage`, persiste contexto completo (`session-context.ts`), possui anel SVG de progresso, atalho `Espaço` e fila offline idempotente (`sync-queue.ts` com `client_session_id`). |
@@ -31,26 +31,29 @@ app/
   timer/page.tsx                  # Versão Grátis (anônimo ou logado)
   dashboard/page.tsx              # Free logado: upsell + Alocação de Tempo + Mapa de Consistência
   vip/page.tsx                    # Área VIP = Edital Verticalizado Inteligente
-  pricing/page.tsx                # Planos + modal de Checkout Pix
+  pricing/page.tsx                # Página comercial de planos + modal de Checkout Pix
+  checkout/page.tsx               # Rota de checkout direto (?plan=sprint|combo|anual)
   actions.ts                      # Server Actions com try/catch, validação e fallback pré-migration
   api/
     ai/edital/route.ts            # Importação de edital via Gemini
-    checkout/pix/route.ts         # Cria cliente + cobrança Pix no Asaas e retorna QR Code
+    checkout/pix/route.ts         # Cria cliente + cobrança Pix no Asaas (com validação de cupom) e retorna QR Code
     checkout/status/route.ts      # Polling de confirmação da cobrança Pix
     webhooks/asaas/route.ts       # Webhook Asaas autenticado e idempotente
 components/
   timer/                          # PomodoroPanel, StopwatchPanel, TimerApp, SoundSelect
   edital/                         # EditalBoard, SubjectRow, TopicRow, TrafficLight
-  billing/                        # PixCheckoutModal
+  billing/                        # PricingSection, PixCheckoutModal
   dashboard/                      # FocusWrapper, PremiumObserver, VerifyPaymentButton, SubjectPieChart, ConsistencyHeatmap
 lib/
   timer-engine/                   # engine.ts, useTimerEngine.ts, session-context.ts, types.ts
   storage/                        # sessions.ts, goals.ts, sync-queue.ts
   asaas/                          # client.ts, types.ts, webhook.ts
   supabase/                       # client.ts, server.ts, admin.ts
-  plans.ts                        # Catálogo de planos, isPremium() e cálculo de expiração
+  gemini.ts                       # Utilitário resiliente Gemini (backoff exponencial 1s/2s/4s + cascata de fallback)
+  plans.ts                        # Catálogo de planos (sprint/combo/anual), cupom LANCAMENTO, isPremium() e cálculo de expiração
 db/migrations/
   05_pivot_edital_semaforo.sql    # Migration unificada (Billing + Semáforo + Tempo por Tópico + RPC)
+  06_pricing_tiers.sql            # Colunas explícitas VIP (is_vip, vip_plan, max_contests, vip_expires_at)
 proxy.ts                          # Convenção Next.js 16 (substitui middleware.ts)
 docs/ROADMAP.md                   # Este documento de Handoff
 ```
@@ -94,7 +97,9 @@ docs/ROADMAP.md                   # Este documento de Handoff
 | 2026-10-26 | Passos 0 e 1 | Blindagem do webhook Asaas, `lib/plans.ts`, `lib/supabase/admin.ts`, `lib/asaas/*` | `f3da0af` |
 | 2026-10-26 | Passo 2 | Remoção de código zumbi, migração `middleware.ts` → `proxy.ts`, limpeza de deps e copy | `2ada7fb` |
 | 2026-10-26 | Passo 3 | Timer blindado (`session-context.ts`, worker alarm, `sync-queue.ts`, anel SVG, atalho Espaço) | `7e3bbc7` |
-| 2026-10-26 | Passos 4 a 9 | Migration 05, Edital com Semáforo e performance, integração Timer↔Edital, Checkout Pix API e QA | *(commit final)* |
+| 2026-10-26 | Passos 4 a 9 | Migration 05, Edital com Semáforo e performance, integração Timer↔Edital, Checkout Pix API e QA | `ffad9e8` |
+| 2026-10-27 | Passo 10 (Pricing v2) | Nova página comercial (`PricingSection`), tiers `sprint`/`combo`/`anual`, cupom `LANCAMENTO` (R$ 9,90), Webhook/Checkout com `daysDuration`/`maxContests` e Migration 06 | *(commit atual)* |
+| 2026-10-27 | Passo 11 (Gemini Resiliente) | Criação de `lib/gemini.ts` (`generateContentResilient` com retry 1s/2s/4s para 503/429/high demand e fallback em cascata) integrado em `app/api/ai/edital/route.ts` | *(commit atual)* |
 
 ---
 

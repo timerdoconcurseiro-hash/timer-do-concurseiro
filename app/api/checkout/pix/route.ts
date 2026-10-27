@@ -10,8 +10,12 @@ import {
   isAsaasConfigured,
   updateCustomer,
 } from "@/lib/asaas/client";
-import { buildExternalReference, isMissingColumn } from "@/lib/asaas/webhook";
-import { isPlanCode, PLAN_CATALOG } from "@/lib/plans";
+import {
+  buildExternalReference,
+  isMissingColumn,
+  isMissingRelation,
+} from "@/lib/asaas/webhook";
+import { isPlanCode, PLAN_CATALOG, resolvePlanPricing } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
 
@@ -64,7 +68,12 @@ export async function POST(request: Request) {
       );
     }
 
-    let body: { plan?: unknown; cpfCnpj?: unknown; name?: unknown };
+    let body: {
+      plan?: unknown;
+      cpfCnpj?: unknown;
+      name?: unknown;
+      coupon?: unknown;
+    };
     try {
       body = await request.json();
     } catch {
@@ -72,7 +81,10 @@ export async function POST(request: Request) {
     }
 
     if (!isPlanCode(body.plan)) {
-      return NextResponse.json({ error: "Plano inválido." }, { status: 400 });
+      return NextResponse.json(
+        { error: "Plano inválido. Escolha entre sprint, combo ou anual." },
+        { status: 400 },
+      );
     }
 
     const cleanCpf = String(body.cpfCnpj || "").replace(/\D+/g, "");
@@ -84,6 +96,7 @@ export async function POST(request: Request) {
     }
 
     const plan = PLAN_CATALOG[body.plan];
+    const pricing = resolvePlanPricing(body.plan, body.coupon);
     const user = authData.user;
     const userEmail = user.email!;
     const customerName =
@@ -136,20 +149,58 @@ export async function POST(request: Request) {
     }
 
     const externalReference = buildExternalReference(user.id, body.plan);
+    const descriptionSuffix = pricing.discountApplied
+      ? ` (Cupom ${pricing.couponCode} - Lote Fundador)`
+      : ` (${plan.durationDays} dias)`;
+
     const payment = await createPixPayment({
       customer: customerId,
-      value: plan.value,
+      value: pricing.value,
       dueDate: todayDateString(),
-      description: `Timer do Concurseiro VIP - ${plan.label}`,
+      description: `Timer do Concurseiro VIP - ${plan.label}${descriptionSuffix}`,
       externalReference,
     });
+
+    // Salva no ledger payment_events os metadados da cobrança (userId, plan, daysDuration, maxContests)
+    const { error: ledgerErr } = await supabaseAdmin.from("payment_events").upsert(
+      {
+        id: `PIX_CREATED:${payment.id}`,
+        event: "PIX_CHARGE_CREATED",
+        payment_id: payment.id,
+        customer_id: customerId,
+        user_id: user.id,
+        billing_type: "PIX",
+        value: pricing.value,
+        status: payment.status ?? "PENDING",
+        processed_at: new Date().toISOString(),
+        raw: {
+          userId: user.id,
+          plan: body.plan,
+          daysDuration: plan.durationDays,
+          maxContests: plan.maxContests,
+          couponCode: pricing.couponCode,
+          discountApplied: pricing.discountApplied,
+          externalReference,
+        },
+      },
+      { onConflict: "id", ignoreDuplicates: true },
+    );
+    if (ledgerErr && !isMissingRelation(ledgerErr.code)) {
+      console.warn("[Checkout Pix] Aviso ao registrar metadata em payment_events:", ledgerErr.message);
+    }
 
     const qr = await getPixQrCode(payment.id);
 
     return NextResponse.json({
       paymentId: payment.id,
-      value: plan.value,
+      plan: body.plan,
       planLabel: plan.label,
+      value: pricing.value,
+      originalValue: pricing.originalValue,
+      discountApplied: pricing.discountApplied,
+      couponCode: pricing.couponCode,
+      daysDuration: plan.durationDays,
+      maxContests: plan.maxContests,
       encodedImage: qr.encodedImage,
       payload: qr.payload,
       expirationDate: qr.expirationDate ?? null,

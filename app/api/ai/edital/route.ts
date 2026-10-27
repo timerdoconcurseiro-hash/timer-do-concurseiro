@@ -1,47 +1,58 @@
-import { NextResponse } from 'next/server';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { NextResponse } from "next/server";
+import type { Part } from "@google/generative-ai";
 import { createClient } from "@/lib/supabase/server";
+import { generateContentResilient } from "@/lib/gemini";
 
 export async function POST(request: Request) {
   try {
     const supabase = await createClient();
     const { data: authData } = await supabase.auth.getUser();
-    
+
     if (!authData.user) {
-      return NextResponse.json({ error: 'Não autorizado. Faça login.' }, { status: 401 });
+      return NextResponse.json(
+        { error: "Não autorizado. Faça login." },
+        { status: 401 },
+      );
     }
 
     // Verificar limites do usuário
     const { data: profile } = await supabase
-      .from('profiles')
-      .select('ai_edital_count, plan')
-      .eq('id', authData.user.id)
+      .from("profiles")
+      .select("ai_edital_count, plan")
+      .eq("id", authData.user.id)
       .single();
 
     const maxEditais = 5; // Limite de 5 editais gerados por IA
-    if (profile && profile.ai_edital_count >= maxEditais && profile.plan !== 'admin') {
-      return NextResponse.json({ 
-        error: `Limite atingido! Você já gerou ${maxEditais} editais com a Inteligência Artificial. Adquira mais créditos para continuar.` 
-      }, { status: 403 });
+    if (
+      profile &&
+      profile.ai_edital_count >= maxEditais &&
+      profile.plan !== "admin"
+    ) {
+      return NextResponse.json(
+        {
+          error: `Limite atingido! Você já gerou ${maxEditais} editais com a Inteligência Artificial. Adquira mais créditos para continuar.`,
+        },
+        { status: 403 },
+      );
     }
 
     const { syllabusText, pdfBase64 } = await request.json();
 
     if (!syllabusText && !pdfBase64) {
-      return NextResponse.json({ error: 'Nenhum texto ou PDF enviado.' }, { status: 400 });
+      return NextResponse.json(
+        { error: "Nenhum texto ou PDF enviado." },
+        { status: 400 },
+      );
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json({ error: 'Chave da API do Gemini não configurada.' }, { status: 500 });
+    if (!process.env.GEMINI_API_KEY) {
+      return NextResponse.json(
+        { error: "Chave da API do Gemini não configurada." },
+        { status: 500 },
+      );
     }
 
-    const genAI = new GoogleGenerativeAI(apiKey);
-
-    const parts: Array<
-      | { inlineData: { data: string; mimeType: string } }
-      | { text: string }
-    > = [];
+    const parts: Part[] = [];
 
     if (pdfBase64) {
       parts.push({
@@ -82,41 +93,17 @@ export async function POST(request: Request) {
     }
     `;
 
-    const candidateModels = [
-      "gemini-2.5-flash",
-      "gemini-2.0-flash",
-      "gemini-1.5-flash",
-      "gemini-3.6-flash",
-      "gemini-3.5-flash",
-    ];
-    let responseText = "";
-    let lastError: unknown = null;
-    for (const modelName of candidateModels) {
-      try {
-        const m = genAI.getGenerativeModel({
-          model: modelName,
-          generationConfig: { responseMimeType: "application/json" },
-        });
-        const res = await m.generateContent([prompt, ...parts]);
-        responseText = res.response.text();
-        break;
-      } catch (e: unknown) {
-        lastError = e;
-        console.warn(`Fallback from ${modelName}:`, e instanceof Error ? e.message : String(e));
-      }
-    }
-    if (!responseText) {
-      throw lastError instanceof Error
-        ? lastError
-        : new Error("Nenhum modelo Gemini disponível respondeu.");
-    }
-    
-    // Tratamento para MD JSON retornado por modelos mais antigos
+    const responseText = await generateContentResilient([prompt, ...parts], {
+      responseMimeType: "application/json",
+      maxRetriesPerModel: 3,
+    });
+
+    // Tratamento para MD JSON retornado eventualmente por modelos de fallback
     let cleanText = responseText.trim();
-    if (cleanText.startsWith('```json')) {
-      cleanText = cleanText.replace(/```json\n?/, '').replace(/\n?```$/, '');
-    } else if (cleanText.startsWith('```')) {
-      cleanText = cleanText.replace(/```\n?/, '').replace(/\n?```$/, '');
+    if (cleanText.startsWith("```json")) {
+      cleanText = cleanText.replace(/```json\n?/, "").replace(/\n?```$/, "");
+    } else if (cleanText.startsWith("```")) {
+      cleanText = cleanText.replace(/```\n?/, "").replace(/\n?```$/, "");
     }
 
     const parsedData = JSON.parse(cleanText);
@@ -124,15 +111,16 @@ export async function POST(request: Request) {
     // Incrementar o contador de uso
     if (profile) {
       await supabase
-        .from('profiles')
+        .from("profiles")
         .update({ ai_edital_count: (profile.ai_edital_count || 0) + 1 })
-        .eq('id', authData.user.id);
+        .eq("id", authData.user.id);
     }
 
     return NextResponse.json({ success: true, data: parsedData });
   } catch (error: unknown) {
     console.error("Erro ao gerar edital:", error);
-    const message = error instanceof Error ? error.message : "Falha ao processar com IA.";
+    const message =
+      error instanceof Error ? error.message : "Falha ao processar com IA.";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
