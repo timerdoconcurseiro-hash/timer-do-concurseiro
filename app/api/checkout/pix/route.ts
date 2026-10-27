@@ -49,6 +49,20 @@ function todayDateString(): string {
 
 export async function POST(request: Request) {
   try {
+    // Bloqueio de segurança em modo pré-lançamento
+    const salesOpen =
+      process.env.NEXT_PUBLIC_SALES_OPEN === "true" &&
+      process.env.SALES_PRELAUNCH_LOCK === "false";
+    if (!salesOpen) {
+      return NextResponse.json(
+        {
+          error:
+            "🚀 Liberação em Breve! As vendas oficiais do Lote VIP serão abertas nos próximos dias. Prepare-se!",
+        },
+        { status: 403 },
+      );
+    }
+
     if (!isAsaasConfigured()) {
       return NextResponse.json(
         {

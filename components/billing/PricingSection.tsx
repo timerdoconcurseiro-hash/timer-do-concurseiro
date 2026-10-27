@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import {
   Check,
   Zap,
@@ -12,12 +11,9 @@ import {
   Award,
   ArrowLeft,
   Lock,
-  QrCode,
   HelpCircle,
 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
-import { isPlanCode, PLAN_CATALOG, type PlanCode } from "@/lib/plans";
-import { PixCheckoutModal } from "@/components/billing/PixCheckoutModal";
+import { PLAN_CATALOG } from "@/lib/plans";
 import { VerifyPaymentButton } from "@/components/dashboard/VerifyPaymentButton";
 
 interface PricingSectionProps {
@@ -53,53 +49,6 @@ function splitPriceParts(value: number): { reais: string; centavos: string } {
 }
 
 export function PricingSection({ showBackLink = true }: PricingSectionProps) {
-  const searchParams = useSearchParams();
-  const [selectedPlan, setSelectedPlan] = useState<PlanCode | null>(null);
-  const [initialCoupon, setInitialCoupon] = useState<string>("");
-
-  const salesOpen = process.env.NEXT_PUBLIC_SALES_OPEN !== "false";
-
-  // Permite abrir automaticamente via /pricing?plan=combo&coupon=LANCAMENTO ou /checkout?plan=combo
-  useEffect(() => {
-    const planParam = searchParams.get("plan");
-    const couponParam = searchParams.get("coupon");
-    if (isPlanCode(planParam) && salesOpen) {
-      const timer = setTimeout(() => {
-        if (couponParam) setInitialCoupon(couponParam.toUpperCase());
-        setSelectedPlan(planParam);
-      }, 0);
-      return () => clearTimeout(timer);
-    }
-  }, [searchParams, salesOpen]);
-
-  const handleSelectPlan = async (plan: PlanCode) => {
-    if (!salesOpen) return;
-
-    const supabase = createClient();
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-
-    if (!session) {
-      const redirectUrl = new URL("/pricing", window.location.origin);
-      redirectUrl.searchParams.set("plan", plan);
-      const couponParam = searchParams.get("coupon");
-      if (couponParam) {
-        redirectUrl.searchParams.set("coupon", couponParam);
-      }
-
-      await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: redirectUrl.toString(),
-        },
-      });
-      return;
-    }
-
-    setSelectedPlan(plan);
-  };
-
   const sprint = PLAN_CATALOG.sprint;
   const combo = PLAN_CATALOG.combo;
   const anual = PLAN_CATALOG.anual;
@@ -135,12 +84,6 @@ export function PricingSection({ showBackLink = true }: PricingSectionProps) {
             </span>
           </h1>
 
-          {!salesOpen && (
-            <p className="text-amber-400 text-base font-medium">
-              Conheça nossos planos — abertura de vagas em breve!
-            </p>
-          )}
-
           <p className="text-slate-400 text-sm sm:text-base leading-relaxed">
             Verticalize qualquer edital com Inteligência Artificial, controle seu nível de
             domínio no <strong className="text-slate-200">Semáforo D2 (⚪ 🔴 🟡 🟢)</strong> e
@@ -151,7 +94,7 @@ export function PricingSection({ showBackLink = true }: PricingSectionProps) {
         {/* Grid de Planos */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
           {/* PLANO 1: SPRINT PÓS-EDITAL */}
-          <div className="bg-slate-900/60 border border-slate-800 hover:border-slate-700 rounded-3xl p-7 sm:p-8 flex flex-col justify-between backdrop-blur-sm transition-all">
+          <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-7 sm:p-8 flex flex-col justify-between backdrop-blur-sm transition-all">
             <div>
               <div className="flex items-center justify-between gap-2">
                 <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-400">
@@ -200,20 +143,18 @@ export function PricingSection({ showBackLink = true }: PricingSectionProps) {
               </ul>
             </div>
 
-            <div className="mt-8 pt-4">
+            <div className="mt-8 pt-4 space-y-2.5">
               <button
                 type="button"
-                onClick={() => handleSelectPlan("sprint")}
-                disabled={!salesOpen}
-                className={`w-full py-4 px-6 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                  !salesOpen
-                    ? "bg-slate-800 text-slate-500 opacity-50 cursor-not-allowed"
-                    : "bg-slate-800 hover:bg-emerald-500 hover:text-slate-950 text-white border border-slate-700 hover:border-emerald-400"
-                }`}
+                disabled
+                className="w-full py-4 px-6 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 opacity-80 bg-slate-800 text-slate-300 border border-slate-700 cursor-not-allowed select-none"
               >
-                {!salesOpen ? <Lock size={16} /> : <QrCode size={16} />}
-                Liberar Sprint via Pix
+                <Lock size={16} className="text-amber-400 shrink-0" />
+                <span>🚀 Liberação em Breve • Lote VIP</span>
               </button>
+              <p className="text-center text-[11px] text-slate-400 leading-relaxed">
+                As vendas oficiais serão abertas nos próximos dias. Prepare-se!
+              </p>
             </div>
           </div>
 
@@ -283,25 +224,20 @@ export function PricingSection({ showBackLink = true }: PricingSectionProps) {
             <div className="mt-8 pt-4 space-y-2.5">
               <button
                 type="button"
-                onClick={() => handleSelectPlan("combo")}
-                disabled={!salesOpen}
-                className={`w-full py-4 px-6 rounded-2xl font-extrabold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                  !salesOpen
-                    ? "bg-amber-900/40 text-amber-300/50 opacity-50 cursor-not-allowed"
-                    : "bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-[0_0_25px_rgba(245,158,11,0.35)] hover:scale-[1.02]"
-                }`}
+                disabled
+                className="w-full py-4 px-6 rounded-2xl font-extrabold text-sm flex items-center justify-center gap-2 opacity-85 bg-gradient-to-r from-amber-500/80 to-amber-600/80 text-slate-950 border border-amber-400/40 shadow-[0_0_20px_rgba(245,158,11,0.2)] cursor-not-allowed select-none"
               >
-                {!salesOpen ? <Lock size={16} /> : <QrCode size={18} />}
-                Garantir Combo Carreiras via Pix
+                <Lock size={16} className="text-slate-950 shrink-0" />
+                <span>🚀 Liberação em Breve • Lote VIP</span>
               </button>
-              <p className="text-center text-[11px] text-slate-400">
-                Tem cupom de fundador? Aplique na próxima tela.
+              <p className="text-center text-[11px] text-amber-200/80 leading-relaxed">
+                As vendas oficiais serão abertas nos próximos dias. Prepare-se!
               </p>
             </div>
           </div>
 
           {/* PLANO 3: PASSAPORTE ANUAL */}
-          <div className="bg-slate-900/60 border border-slate-800 hover:border-slate-700 rounded-3xl p-7 sm:p-8 flex flex-col justify-between backdrop-blur-sm transition-all">
+          <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-7 sm:p-8 flex flex-col justify-between backdrop-blur-sm transition-all">
             <div>
               <div className="flex items-center justify-between gap-2">
                 <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-400">
@@ -352,20 +288,18 @@ export function PricingSection({ showBackLink = true }: PricingSectionProps) {
               </ul>
             </div>
 
-            <div className="mt-8 pt-4">
+            <div className="mt-8 pt-4 space-y-2.5">
               <button
                 type="button"
-                onClick={() => handleSelectPlan("anual")}
-                disabled={!salesOpen}
-                className={`w-full py-4 px-6 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                  !salesOpen
-                    ? "bg-slate-800 text-slate-500 opacity-50 cursor-not-allowed"
-                    : "bg-slate-800 hover:bg-emerald-500 hover:text-slate-950 text-white border border-slate-700 hover:border-emerald-400"
-                }`}
+                disabled
+                className="w-full py-4 px-6 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 opacity-80 bg-slate-800 text-slate-300 border border-slate-700 cursor-not-allowed select-none"
               >
-                {!salesOpen ? <Lock size={16} /> : <QrCode size={16} />}
-                Liberar Passaporte Anual
+                <Lock size={16} className="text-amber-400 shrink-0" />
+                <span>🚀 Liberação em Breve • Lote VIP</span>
               </button>
+              <p className="text-center text-[11px] text-slate-400 leading-relaxed">
+                As vendas oficiais serão abertas nos próximos dias. Prepare-se!
+              </p>
             </div>
           </div>
         </div>
@@ -423,14 +357,6 @@ export function PricingSection({ showBackLink = true }: PricingSectionProps) {
           <VerifyPaymentButton />
         </div>
       </div>
-
-      <PixCheckoutModal
-        key={`${selectedPlan ?? "closed"}:${initialCoupon}`}
-        planCode={selectedPlan}
-        initialCoupon={initialCoupon}
-        onClose={() => setSelectedPlan(null)}
-        onChangePlan={(nextPlan) => setSelectedPlan(nextPlan)}
-      />
     </section>
   );
 }
